@@ -1,0 +1,372 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Alert,
+  Chip,
+  Switch,
+  FormControlLabel,
+  Divider,
+  Slider
+} from '@mui/material';
+import { Close as CloseIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon } from '@mui/icons-material';
+import axios from 'axios';
+import TargetVisualization from './TargetVisualization';
+import { useRingMode } from '@/contexts/RingModeContext';
+
+interface SessionDetailsModalProps {
+  open: boolean;
+  onClose: () => void;
+  sessionId: string | null;
+}
+
+export default function SessionDetailsModal({ open, onClose, sessionId }: SessionDetailsModalProps) {
+  const { formatScore } = useRingMode();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any>(null);
+  
+  // Local toggles for visualization
+  const [showTeiler, setShowTeiler] = useState(true);
+  const [showSpread, setShowSpread] = useState(true);
+  const [showCenter, setShowCenter] = useState(true);
+  const [localRingMode, setLocalRingMode] = useState<'decimal' | 'normal'>('decimal');
+  const [zoomScale, setZoomScale] = useState(5); // Default scale, will be adjusted based on discipline
+
+  useEffect(() => {
+    if (open && sessionId) {
+      loadSessionData();
+    }
+  }, [open, sessionId]);
+
+  const loadSessionData = async () => {
+    if (!sessionId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/sessions/${sessionId}/shots`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setData(response.data);
+      
+      // Set appropriate zoom scale based on discipline
+      const discipline = response.data?.session?.discipline;
+      if (discipline?.toUpperCase().includes('KK')) {
+        setZoomScale(3.5); // KK scheiben sind größer, brauchen kleineren scale
+      } else {
+        setZoomScale(5); // LG default scale
+      }
+    } catch (err: any) {
+      console.error('Error loading session data:', err);
+      setError(err.response?.data?.message || 'Fehler beim Laden der Session-Daten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setData(null);
+    setError(null);
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={handleClose}
+      maxWidth="xl"
+      fullWidth
+      PaperProps={{
+        sx: { minHeight: '80vh' }
+      }}
+    >
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5">
+            Session Details
+          </Typography>
+          <Button onClick={handleClose} color="inherit">
+            <CloseIcon />
+          </Button>
+        </Box>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        {loading && (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <CircularProgress />
+          </Box>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {data && data.success && (
+          <Grid container spacing={3}>
+            {/* Session Info */}
+            {data.session && (
+              <Grid size={{ xs: 12 }}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Schütze
+                        </Typography>
+                        <Typography variant="h6">
+                          {data.session.shooter_name}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Datum
+                        </Typography>
+                        <Typography variant="h6">
+                          {new Date(data.session.date).toLocaleDateString('de-DE')}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Disziplin
+                        </Typography>
+                        <Typography variant="h6">
+                          {data.session.discipline}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Gesamtscore
+                        </Typography>
+                        <Typography variant="h6">
+                          Normal: {Math.floor(data.session.total_score / 10)} | Zentel: {data.session.total_score_decimal}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Visualization Controls */}
+            <Grid size={{ xs: 12 }}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Anzeigeoptionen
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
+                    <FormControlLabel
+                      control={
+                        <Switch 
+                          checked={localRingMode === 'decimal'} 
+                          onChange={(e) => setLocalRingMode(e.target.checked ? 'decimal' : 'normal')}
+                        />
+                      }
+                      label="Zentelringe anzeigen"
+                    />
+                    <FormControlLabel
+                      control={<Switch checked={showTeiler} onChange={(e) => setShowTeiler(e.target.checked)} />}
+                      label="Bester Teiler"
+                    />
+                    <FormControlLabel
+                      control={<Switch checked={showSpread} onChange={(e) => setShowSpread(e.target.checked)} />}
+                      label="Streukreis"
+                    />
+                    <FormControlLabel
+                      control={<Switch checked={showCenter} onChange={(e) => setShowCenter(e.target.checked)} />}
+                      label="Mittelpunkt & Verschiebung"
+                    />
+                  </Box>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  {/* Zoom Control */}
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1} mb={1}>
+                      <ZoomOutIcon color="action" />
+                      <Typography variant="subtitle2" sx={{ minWidth: 80 }}>
+                        Zoom: {zoomScale}x
+                      </Typography>
+                      <ZoomInIcon color="action" />
+                    </Box>
+                    <Slider
+                      value={zoomScale}
+                      onChange={(e, value) => setZoomScale(value as number)}
+                      min={2}
+                      max={10}
+                      step={0.5}
+                      marks={[
+                        { value: 2, label: '2x' },
+                        { value: 5, label: '5x' },
+                        { value: 8, label: '8x' },
+                        { value: 10, label: '10x' }
+                      ]}
+                      valueLabelDisplay="auto"
+                      sx={{ width: 300 }}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      Passe die Skalierung der Scheibe an (Pixel pro mm)
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Target Visualization */}
+            <Grid size={{ xs: 12, lg: 8 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Trefferbild
+                  </Typography>
+                  {data.shots && data.analysis && (
+                    <TargetVisualization
+                      shots={data.shots}
+                      analysis={data.analysis}
+                      ringMode={localRingMode}
+                      showTeiler={showTeiler}
+                      showSpread={showSpread}
+                      showCenter={showCenter}
+                      scale={zoomScale}
+                      discipline={data.session?.discipline}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Statistics */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              {/* Teiler Statistics */}
+              <Card sx={{ mb: 2 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Teiler
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  {data.analysis?.teiler && (
+                    <>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Bester:</Typography>
+                        <Chip label={data.analysis.teiler.best.toFixed(1)} color="success" size="small" />
+                      </Box>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Schlechtester:</Typography>
+                        <Chip label={data.analysis.teiler.worst.toFixed(1)} color="error" size="small" />
+                      </Box>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Durchschnitt:</Typography>
+                        <Chip label={data.analysis.teiler.average.toFixed(1)} color="primary" size="small" />
+                      </Box>
+                      {data.session?.best_teiler && (
+                        <Box display="flex" justifyContent="space-between">
+                          <Typography variant="caption" color="text.secondary">
+                            (Meyton DB: {data.session.best_teiler})
+                          </Typography>
+                        </Box>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Spread Statistics */}
+              <Card sx={{ mb: 2 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Streuung
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  {data.analysis?.spread && (
+                    <>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>X-Achse:</Typography>
+                        <Typography fontWeight="bold">{data.analysis.spread.x_std.toFixed(2)} mm</Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Y-Achse:</Typography>
+                        <Typography fontWeight="bold">{data.analysis.spread.y_std.toFixed(2)} mm</Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Gesamt:</Typography>
+                        <Typography fontWeight="bold">{data.analysis.spread.total.toFixed(2)} mm</Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between">
+                        <Typography>Streukreis (2σ):</Typography>
+                        <Typography fontWeight="bold">{data.analysis.spread.radius.toFixed(2)} mm</Typography>
+                      </Box>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Offset Statistics */}
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Verschiebung
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  {data.analysis?.center && (
+                    <>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Abstand vom Zentrum:</Typography>
+                        <Typography fontWeight="bold">{data.analysis.center.offset.toFixed(2)} mm</Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Horizontal:</Typography>
+                        <Typography fontWeight="bold">
+                          {Math.abs(data.analysis.center.x).toFixed(2)} mm {data.analysis.center.direction.x}
+                        </Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography>Vertikal:</Typography>
+                        <Typography fontWeight="bold">
+                          {Math.abs(data.analysis.center.y).toFixed(2)} mm {data.analysis.center.direction.y}
+                        </Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between">
+                        <Typography>Tendenz:</Typography>
+                        <Chip 
+                          label={data.analysis.tendency?.dominant.replace('_', ' ').replace('top', 'oben').replace('bottom', 'unten').replace('left', 'links').replace('right', 'rechts')} 
+                          size="small" 
+                        />
+                      </Box>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={handleClose} variant="contained">
+          Schließen
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
