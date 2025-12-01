@@ -7,7 +7,7 @@ import { calculateShotAnalysis, Shot } from '@/lib/utils/shotAnalysis';
 async function handler(req: AuthenticatedRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const sortBy = searchParams.get('sortBy') || 'avgScore'; // avgScore, bestScore, bestTeiler, totalSessions
+    const sortBy = searchParams.get('sortBy') || 'avgScore'; // avgScore, bestTeiler, totalSessions, totalShots, bestSessionScore
     const timeRange = searchParams.get('timeRange') || 'all'; // all, 30, 90, 365
     const limit = parseInt(searchParams.get('limit') || '50');
     
@@ -50,7 +50,6 @@ async function handler(req: AuthenticatedRequest) {
         let totalRings = 0;
         let totalShots = 0;
         let sessionsCount = sessionsArray.length;
-        let bestScore = 0;
         let bestSessionScore = 0;
         const teilerValues: number[] = [];
         
@@ -65,14 +64,6 @@ async function handler(req: AuthenticatedRequest) {
           // Track best session score
           if (sessionTotalRings > bestSessionScore) {
             bestSessionScore = sessionTotalRings;
-          }
-          
-          // Calculate score per shot for this session
-          if (shots > 0) {
-            const scorePerShot = sessionTotalRings / shots;
-            if (scorePerShot > bestScore) {
-              bestScore = scorePerShot;
-          }
           }
           
           // Collect teiler values
@@ -99,7 +90,6 @@ async function handler(req: AuthenticatedRequest) {
           sessionsCount,
           totalShots,
           avgScore: avgScorePerShot,
-          bestScore: bestScore,
           bestSessionScore: bestSessionScore,
           bestTeiler: bestTeiler,
           memberSince: user.created_at
@@ -112,14 +102,14 @@ async function handler(req: AuthenticatedRequest) {
     // Sort based on selected metric
     leaderboardData.sort((a, b) => {
       switch (sortBy) {
-        case 'bestScore':
-          return b.bestScore - a.bestScore;
         case 'bestTeiler':
           if (a.bestTeiler === null) return 1;
           if (b.bestTeiler === null) return -1;
           return a.bestTeiler - b.bestTeiler; // Lower is better
         case 'totalSessions':
           return b.sessionsCount - a.sessionsCount;
+        case 'totalShots':
+          return b.totalShots - a.totalShots;
         case 'bestSessionScore':
           return b.bestSessionScore - a.bestSessionScore;
         case 'avgScore':

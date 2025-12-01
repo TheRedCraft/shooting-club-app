@@ -17,13 +17,13 @@ import {
   Chip,
   Switch,
   FormControlLabel,
-  Divider,
-  Slider
+  Divider
 } from '@mui/material';
-import { Close as CloseIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon } from '@mui/icons-material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
 import TargetVisualization from './TargetVisualization';
 import { useRingMode } from '@/contexts/RingModeContext';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface SessionDetailsModalProps {
   open: boolean;
@@ -33,6 +33,7 @@ interface SessionDetailsModalProps {
 
 export default function SessionDetailsModal({ open, onClose, sessionId }: SessionDetailsModalProps) {
   const { formatScore } = useRingMode();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
@@ -42,7 +43,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
   const [showSpread, setShowSpread] = useState(true);
   const [showCenter, setShowCenter] = useState(true);
   const [localRingMode, setLocalRingMode] = useState<'decimal' | 'normal'>('decimal');
-  const [zoomScale, setZoomScale] = useState(5); // Default scale, will be adjusted based on discipline
+  const zoomScale = 10; // Fixed maximum zoom
 
   useEffect(() => {
     if (open && sessionId) {
@@ -63,17 +64,9 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
       });
       
       setData(response.data);
-      
-      // Set appropriate zoom scale based on discipline
-      const discipline = response.data?.session?.discipline;
-      if (discipline?.toUpperCase().includes('KK')) {
-        setZoomScale(3.5); // KK scheiben sind größer, brauchen kleineren scale
-      } else {
-        setZoomScale(5); // LG default scale
-      }
     } catch (err: any) {
       console.error('Error loading session data:', err);
-      setError(err.response?.data?.message || 'Fehler beim Laden der Session-Daten');
+      setError(err.response?.data?.message || t.sessions.loading);
     } finally {
       setLoading(false);
     }
@@ -100,7 +93,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h5">
-            Session Details
+            {t.sessions.sessionDetails}
           </Typography>
           <Button onClick={handleClose} color="inherit">
             <CloseIcon />
@@ -131,7 +124,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="body2" color="text.secondary">
-                          Schütze
+                          {t.leaderboard.shooter}
                         </Typography>
                         <Typography variant="h6">
                           {data.session.shooter_name}
@@ -139,7 +132,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="body2" color="text.secondary">
-                          Datum
+                          {t.sessions.date}
                         </Typography>
                         <Typography variant="h6">
                           {new Date(data.session.date).toLocaleDateString('de-DE')}
@@ -147,7 +140,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="body2" color="text.secondary">
-                          Disziplin
+                          {t.sessions.discipline}
                         </Typography>
                         <Typography variant="h6">
                           {data.session.discipline}
@@ -155,10 +148,10 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="body2" color="text.secondary">
-                          Gesamtscore
+                          {t.sessions.totalScore}
                         </Typography>
                         <Typography variant="h6">
-                          Normal: {Math.floor(data.session.total_score / 10)} | Zentel: {data.session.total_score_decimal}
+                          {t.sessions.normal}: {Math.floor(data.session.total_score / 10)} | {t.sessions.decimal}: {data.session.total_score_decimal}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -172,7 +165,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="subtitle1" gutterBottom>
-                    Anzeigeoptionen
+                    {t.sessions.displayOptions}
                   </Typography>
                   <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
                     <FormControlLabel
@@ -182,51 +175,20 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
                           onChange={(e) => setLocalRingMode(e.target.checked ? 'decimal' : 'normal')}
                         />
                       }
-                      label="Zentelringe anzeigen"
+                      label={t.sessions.showDecimalRings}
                     />
                     <FormControlLabel
                       control={<Switch checked={showTeiler} onChange={(e) => setShowTeiler(e.target.checked)} />}
-                      label="Bester Teiler"
+                      label={t.sessions.showTeiler}
                     />
                     <FormControlLabel
                       control={<Switch checked={showSpread} onChange={(e) => setShowSpread(e.target.checked)} />}
-                      label="Streukreis"
+                      label={t.sessions.showSpread}
                     />
                     <FormControlLabel
                       control={<Switch checked={showCenter} onChange={(e) => setShowCenter(e.target.checked)} />}
-                      label="Mittelpunkt & Verschiebung"
+                      label={t.sessions.showCenter}
                     />
-                  </Box>
-                  
-                  <Divider sx={{ my: 2 }} />
-                  
-                  {/* Zoom Control */}
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <ZoomOutIcon color="action" />
-                      <Typography variant="subtitle2" sx={{ minWidth: 80 }}>
-                        Zoom: {zoomScale}x
-                      </Typography>
-                      <ZoomInIcon color="action" />
-                    </Box>
-                    <Slider
-                      value={zoomScale}
-                      onChange={(e, value) => setZoomScale(value as number)}
-                      min={2}
-                      max={10}
-                      step={0.5}
-                      marks={[
-                        { value: 2, label: '2x' },
-                        { value: 5, label: '5x' },
-                        { value: 8, label: '8x' },
-                        { value: 10, label: '10x' }
-                      ]}
-                      valueLabelDisplay="auto"
-                      sx={{ width: 300 }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      Passe die Skalierung der Scheibe an (Pixel pro mm)
-                    </Typography>
                   </Box>
                 </CardContent>
               </Card>
@@ -237,7 +199,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    Trefferbild
+                    {t.sessions.targetImage}
                   </Typography>
                   {data.shots && data.analysis && (
                     <TargetVisualization
@@ -261,27 +223,27 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
               <Card sx={{ mb: 2 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    Teiler
+                    {t.sessions.teiler}
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
                   {data.analysis?.teiler && (
                     <>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Bester:</Typography>
+                        <Typography>{t.sessions.stats.best}</Typography>
                         <Chip label={data.analysis.teiler.best.toFixed(1)} color="success" size="small" />
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Schlechtester:</Typography>
+                        <Typography>{t.sessions.stats.worst}</Typography>
                         <Chip label={data.analysis.teiler.worst.toFixed(1)} color="error" size="small" />
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Durchschnitt:</Typography>
+                        <Typography>{t.sessions.stats.average}</Typography>
                         <Chip label={data.analysis.teiler.average.toFixed(1)} color="primary" size="small" />
                       </Box>
                       {data.session?.best_teiler && (
                         <Box display="flex" justifyContent="space-between">
                           <Typography variant="caption" color="text.secondary">
-                            (Meyton DB: {data.session.best_teiler})
+                            ({t.sessions.stats.meytonDb} {data.session.best_teiler})
                           </Typography>
                         </Box>
                       )}
@@ -294,25 +256,25 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
               <Card sx={{ mb: 2 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    Streuung
+                    {t.sessions.spread}
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
                   {data.analysis?.spread && (
                     <>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>X-Achse:</Typography>
+                        <Typography>{t.sessions.stats.xAxis}</Typography>
                         <Typography fontWeight="bold">{data.analysis.spread.x_std.toFixed(2)} mm</Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Y-Achse:</Typography>
+                        <Typography>{t.sessions.stats.yAxis}</Typography>
                         <Typography fontWeight="bold">{data.analysis.spread.y_std.toFixed(2)} mm</Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Gesamt:</Typography>
+                        <Typography>{t.sessions.stats.total}</Typography>
                         <Typography fontWeight="bold">{data.analysis.spread.total.toFixed(2)} mm</Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between">
-                        <Typography>Streukreis (2σ):</Typography>
+                        <Typography>{t.sessions.stats.spreadCircle}</Typography>
                         <Typography fontWeight="bold">{data.analysis.spread.radius.toFixed(2)} mm</Typography>
                       </Box>
                     </>
@@ -324,31 +286,37 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    Verschiebung
+                    {t.sessions.offset}
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
                   {data.analysis?.center && (
                     <>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Abstand vom Zentrum:</Typography>
+                        <Typography>{t.sessions.stats.distanceFromCenter}</Typography>
                         <Typography fontWeight="bold">{data.analysis.center.offset.toFixed(2)} mm</Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Horizontal:</Typography>
+                        <Typography>{t.sessions.stats.horizontal}</Typography>
                         <Typography fontWeight="bold">
                           {Math.abs(data.analysis.center.x).toFixed(2)} mm {data.analysis.center.direction.x}
                         </Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography>Vertikal:</Typography>
+                        <Typography>{t.sessions.stats.vertical}</Typography>
                         <Typography fontWeight="bold">
                           {Math.abs(data.analysis.center.y).toFixed(2)} mm {data.analysis.center.direction.y}
                         </Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between">
-                        <Typography>Tendenz:</Typography>
+                        <Typography>{t.sessions.stats.tendency}</Typography>
                         <Chip 
-                          label={data.analysis.tendency?.dominant.replace('_', ' ').replace('top', 'oben').replace('bottom', 'unten').replace('left', 'links').replace('right', 'rechts')} 
+                          label={data.analysis.tendency?.dominant
+                            .replace('_', ' ')
+                            .replace('top', t.sessions.directions.top)
+                            .replace('bottom', t.sessions.directions.bottom)
+                            .replace('left', t.sessions.directions.left)
+                            .replace('right', t.sessions.directions.right)
+                            .replace('center', t.sessions.directions.center)} 
                           size="small" 
                         />
                       </Box>
@@ -363,7 +331,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
 
       <DialogActions>
         <Button onClick={handleClose} variant="contained">
-          Schließen
+          {t.common.close}
         </Button>
       </DialogActions>
     </Dialog>

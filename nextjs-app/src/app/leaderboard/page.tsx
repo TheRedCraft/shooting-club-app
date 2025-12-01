@@ -38,6 +38,7 @@ import {
   Straighten as StraightenIcon
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { leaderboardService } from '@/lib/client/api';
 
 interface LeaderboardEntry {
@@ -49,7 +50,6 @@ interface LeaderboardEntry {
   sessionsCount: number;
   totalShots: number;
   avgScore: number;
-  bestScore: number;
   bestSessionScore: number;
   bestTeiler: number | null;
   memberSince: string;
@@ -58,6 +58,7 @@ interface LeaderboardEntry {
 export default function LeaderboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLinked, isAdmin, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export default function LeaderboardPage() {
       setMeta(response.data.meta);
     } catch (err: any) {
       console.error('Error loading leaderboard:', err);
-      setError(err.response?.data?.message || 'Fehler beim Laden der Bestenliste');
+      setError(err.response?.data?.message || t.leaderboard.loading);
     } finally {
       setLoading(false);
     }
@@ -157,12 +158,12 @@ export default function LeaderboardPage() {
 
   const getSortLabel = () => {
     switch (sortBy) {
-      case 'avgScore': return 'Durchschnitt';
-      case 'bestScore': return 'Bester Score';
-      case 'bestSessionScore': return 'Beste Session';
-      case 'bestTeiler': return 'Bester Teiler';
-      case 'totalSessions': return 'Meiste Sessions';
-      default: return 'Durchschnitt';
+      case 'avgScore': return t.leaderboard.avgScore;
+      case 'bestSessionScore': return t.leaderboard.totalScore;
+      case 'bestTeiler': return t.leaderboard.bestTeiler;
+      case 'totalSessions': return t.leaderboard.sessions;
+      case 'totalShots': return t.leaderboard.mostShots;
+      default: return t.leaderboard.avgScore;
     }
   };
 
@@ -175,10 +176,10 @@ export default function LeaderboardPage() {
         <TrophyIcon sx={{ fontSize: 40, color: 'primary.main' }} />
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" gutterBottom>
-            Bestenliste
+            {t.leaderboard.title}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Rangliste sortiert nach {getSortLabel()}
+            {t.leaderboard.sortBy}: {getSortLabel()}
           </Typography>
         </Box>
         <IconButton onClick={handleRefresh} disabled={loading}>
@@ -191,12 +192,12 @@ export default function LeaderboardPage() {
         <Card sx={{ mb: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
           <CardContent>
             <Grid container spacing={2} alignItems="center">
-              <Grid item>
+              <Grid size="auto">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   {getMedalIcon(currentUserEntry.rank)}
                   <Box>
                     <Typography variant="h6" fontWeight="bold">
-                      Dein Rang: #{currentUserEntry.rank}
+                      {t.leaderboard.yourStats}: #{currentUserEntry.rank}
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
                       {currentUserEntry.firstName} {currentUserEntry.lastName}
@@ -204,27 +205,19 @@ export default function LeaderboardPage() {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs sx={{ display: 'flex', gap: 3, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <Grid size={{ xs: 12, sm: 'auto' }} sx={{ display: 'flex', gap: 3, justifyContent: 'flex-end', flexWrap: 'wrap', ml: 'auto' }}>
                 <Box textAlign="center">
                   <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                    Ø Score
+                    {t.leaderboard.avgScore}
                   </Typography>
                   <Typography variant="h6" fontWeight="bold">
                     {currentUserEntry.avgScore.toFixed(2)}
                   </Typography>
                 </Box>
-                <Box textAlign="center">
-                  <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                    Bester Score
-                  </Typography>
-                  <Typography variant="h6" fontWeight="bold">
-                    {currentUserEntry.bestScore.toFixed(2)}
-                  </Typography>
-                </Box>
                 {currentUserEntry.bestTeiler && (
                   <Box textAlign="center">
                     <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                      Bester Teiler
+                      {t.leaderboard.bestTeiler}
                     </Typography>
                     <Typography variant="h6" fontWeight="bold">
                       {currentUserEntry.bestTeiler.toFixed(1)} mm
@@ -233,10 +226,18 @@ export default function LeaderboardPage() {
                 )}
                 <Box textAlign="center">
                   <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                    Sessions
+                    {t.leaderboard.sessions}
                   </Typography>
                   <Typography variant="h6" fontWeight="bold">
                     {currentUserEntry.sessionsCount}
+                  </Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                    {t.leaderboard.totalShots}
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {currentUserEntry.totalShots.toLocaleString('de-DE')}
                   </Typography>
                 </Box>
               </Grid>
@@ -248,43 +249,43 @@ export default function LeaderboardPage() {
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item>
+          <Grid size="auto">
             <FilterListIcon color="action" />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>Sortieren nach</InputLabel>
+              <InputLabel>{t.leaderboard.sortBy}</InputLabel>
               <Select
                 value={sortBy}
-                label="Sortieren nach"
+                label={t.leaderboard.sortBy}
                 onChange={handleSortChange}
               >
-                <MenuItem value="avgScore">Durchschn. Score (Ringe/Schuss)</MenuItem>
-                <MenuItem value="bestScore">Bester Score (Ringe/Schuss)</MenuItem>
-                <MenuItem value="bestSessionScore">Beste Session (Gesamt-Ringe)</MenuItem>
-                <MenuItem value="bestTeiler">Bester Teiler (mm)</MenuItem>
-                <MenuItem value="totalSessions">Meiste Sessions</MenuItem>
+                <MenuItem value="avgScore">{t.leaderboard.avgScore}</MenuItem>
+                <MenuItem value="bestSessionScore">{t.leaderboard.totalScore}</MenuItem>
+                <MenuItem value="bestTeiler">{t.leaderboard.bestTeiler}</MenuItem>
+                <MenuItem value="totalSessions">{t.leaderboard.sessions}</MenuItem>
+                <MenuItem value="totalShots">{t.leaderboard.mostShots}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>Zeitraum</InputLabel>
+              <InputLabel>{t.leaderboard.timeRange}</InputLabel>
               <Select
                 value={timeRange}
-                label="Zeitraum"
+                label={t.leaderboard.timeRange}
                 onChange={handleTimeRangeChange}
               >
-                <MenuItem value="all">Gesamt</MenuItem>
-                <MenuItem value="30">Letzte 30 Tage</MenuItem>
-                <MenuItem value="90">Letzte 90 Tage</MenuItem>
-                <MenuItem value="365">Letztes Jahr</MenuItem>
+                <MenuItem value="all">{t.dashboard.timeRange.all}</MenuItem>
+                <MenuItem value="30">{t.dashboard.timeRange.days30}</MenuItem>
+                <MenuItem value="90">{t.dashboard.timeRange.days90}</MenuItem>
+                <MenuItem value="365">{t.dashboard.timeRange.days365}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item>
+          <Grid size="auto">
             <Typography variant="body2" color="text.secondary">
-              {meta && `${meta.totalPlayers} Schützen`}
+              {meta && `${meta.totalPlayers} ${t.leaderboard.shooter}`}
             </Typography>
           </Grid>
         </Grid>
@@ -304,27 +305,19 @@ export default function LeaderboardPage() {
               <TableCell width={80} align="center">
                 <TrophyIcon fontSize="small" />
               </TableCell>
-              <TableCell>Schütze</TableCell>
-              <TableCell align="right">Sessions</TableCell>
-              <TableCell align="right">Schüsse</TableCell>
+              <TableCell>{t.leaderboard.shooter}</TableCell>
+              <TableCell align="right">{t.leaderboard.sessions}</TableCell>
+              <TableCell align="right">{t.leaderboard.totalShots}</TableCell>
               <TableCell align="right">
-                <Tooltip title="Durchschnitt: Ringe pro Schuss">
+                <Tooltip title={t.leaderboard.avgScore}>
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                     <TrendingUpIcon fontSize="small" />
-                    Ø Score
+                    Ø
                   </Box>
                 </Tooltip>
               </TableCell>
               <TableCell align="right">
-                <Tooltip title="Bester Score: Höchste Ringe/Schuss">
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                    <StarIcon fontSize="small" />
-                    Best
-                  </Box>
-                </Tooltip>
-              </TableCell>
-              <TableCell align="right">
-                <Tooltip title="Beste Session: Höchste Gesamtringe">
+                <Tooltip title={t.leaderboard.totalScore}>
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                     <SpeedIcon fontSize="small" />
                     Top
@@ -333,10 +326,10 @@ export default function LeaderboardPage() {
               </TableCell>
               {sortBy === 'bestTeiler' && (
                 <TableCell align="right">
-                  <Tooltip title="Bester Teiler: Kleinster Abstand">
+                  <Tooltip title={t.leaderboard.bestTeiler}>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                       <StraightenIcon fontSize="small" />
-                      Teiler
+                      {t.dashboard.teiler}
                     </Box>
                   </Tooltip>
                 </TableCell>
@@ -356,7 +349,7 @@ export default function LeaderboardPage() {
               <TableRow>
                 <TableCell colSpan={8} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
-                    Noch keine Daten verfügbar
+                    {t.leaderboard.noData}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -407,11 +400,6 @@ export default function LeaderboardPage() {
                           {entry.avgScore.toFixed(2)}
                         </Typography>
                       </Box>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" fontWeight="medium" color="success.main">
-                        {entry.bestScore.toFixed(2)}
-                      </Typography>
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="body2" color="text.secondary">

@@ -6,6 +6,7 @@ import {
   FirstPage as FirstPageIcon,
   LastPage as LastPageIcon
 } from '@mui/icons-material';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface PaginationProps {
   currentPage: number;
@@ -24,6 +25,7 @@ export default function Pagination({
   itemsPerPage,
   loading = false
 }: PaginationProps) {
+  const { t } = useLanguage();
   const hasNextPage = currentPage < totalPages;
   const hasPrevPage = currentPage > 1;
 
@@ -86,7 +88,7 @@ export default function Pagination({
       {/* Info Text */}
       {totalItems !== undefined && itemsPerPage !== undefined && (
         <Typography variant="body2" color="text.secondary">
-          Seite {currentPage} von {totalPages} ({totalItems} Einträge gesamt)
+          {t.pagination.page} {currentPage} {t.pagination.of} {totalPages} ({totalItems} {t.leaderboard.sessions})
         </Typography>
       )}
 
@@ -97,7 +99,7 @@ export default function Pagination({
           onClick={() => onPageChange(1)}
           disabled={!hasPrevPage || loading}
           size="small"
-          aria-label="Erste Seite"
+          aria-label={t.pagination.page + ' 1'}
         >
           <FirstPageIcon />
         </IconButton>
@@ -107,7 +109,7 @@ export default function Pagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPrevPage || loading}
           size="small"
-          aria-label="Vorherige Seite"
+          aria-label={t.pagination.previous}
         >
           <NavigateBeforeIcon />
         </IconButton>
@@ -159,7 +161,7 @@ export default function Pagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!hasNextPage || loading}
           size="small"
-          aria-label="Nächste Seite"
+          aria-label={t.pagination.next}
         >
           <NavigateNextIcon />
         </IconButton>
@@ -169,7 +171,7 @@ export default function Pagination({
           onClick={() => onPageChange(totalPages)}
           disabled={!hasNextPage || loading}
           size="small"
-          aria-label="Letzte Seite"
+          aria-label={t.pagination.page + ' ' + totalPages}
         >
           <LastPageIcon />
         </IconButton>

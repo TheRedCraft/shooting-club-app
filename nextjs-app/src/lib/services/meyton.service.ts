@@ -7,11 +7,11 @@ let meytonPool: mysql.Pool | null = null;
 const getMeytonPool = async () => {
   if (!meytonPool) {
     meytonPool = mysql.createPool({
-      host: process.env.MEYTON_DB_HOST || '192.168.10.200',
-      port: parseInt(process.env.MEYTON_DB_PORT || '3306'),
-      database: process.env.MEYTON_DB_NAME || 'SSMDB2',
-      user: process.env.MEYTON_DB_USER || 'meyton',
-      password: process.env.MEYTON_DB_PASSWORD || 'mc4hct',
+      host: process.env.MEYTON_DB_HOST,
+      port: parseInt(process.env.MEYTON_DB_PORT),
+      database: process.env.MEYTON_DB_NAME,
+      user: process.env.MEYTON_DB_USER,
+      password: process.env.MEYTON_DB_PASSWORD,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,

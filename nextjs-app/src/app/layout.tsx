@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import Navigation from "@/components/Navigation";
+import { clubConfig } from "@/lib/config/club";
 
 export const metadata: Metadata = {
-  title: "Shooting Club Analytics",
-  description: "Analytics platform for shooting clubs with Meyton integration",
+  title: clubConfig.name,
+  description: clubConfig.description,
 };
 
 export default function RootLayout({

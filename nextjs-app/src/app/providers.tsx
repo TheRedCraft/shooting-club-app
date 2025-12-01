@@ -6,6 +6,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
 import theme from '@/theme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { RingModeProvider } from '@/contexts/RingModeContext';
+import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 import '../i18n/config';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -13,11 +14,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <AppRouterCacheProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthProvider>
-          <RingModeProvider>
-            {children}
-          </RingModeProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <RingModeProvider>
+              {children}
+            </RingModeProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

@@ -31,6 +31,9 @@ import {
   Timeline as TimelineIcon
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
+import ClubLogo from './ClubLogo';
 
 export default function Navigation() {
   const router = useRouter();
@@ -38,6 +41,7 @@ export default function Navigation() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const { t } = useLanguage();
   
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -70,16 +74,16 @@ export default function Navigation() {
   };
 
   const navigationItems = [
-    { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { label: 'Leaderboard', icon: <LeaderboardIcon />, path: '/leaderboard' },
-    ...(isAdmin() ? [{ label: 'Admin Panel', icon: <AdminIcon />, path: '/admin' }] : [])
+    { label: t.nav.dashboard, icon: <DashboardIcon />, path: '/dashboard' },
+    { label: t.nav.leaderboard, icon: <LeaderboardIcon />, path: '/leaderboard' },
+    ...(isAdmin() ? [{ label: t.nav.admin, icon: <AdminIcon />, path: '/admin' }] : [])
   ];
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
-        🎯 Shooting Club
-      </Typography>
+      <Box sx={{ my: 2, display: 'flex', justifyContent: 'center' }}>
+        <ClubLogo variant="h6" />
+      </Box>
       <Divider />
       <List>
         {navigationItems.map((item) => (
@@ -113,9 +117,9 @@ export default function Navigation() {
             </IconButton>
           )}
           
-          <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 4 }}>
-            🎯 Shooting Club
-          </Typography>
+          <Box sx={{ flexGrow: 0, mr: 4 }}>
+            <ClubLogo variant="h6" />
+          </Box>
 
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
@@ -145,6 +149,7 @@ export default function Navigation() {
                 {user.is_admin && ' (Admin)'}
               </Typography>
             )}
+            <LanguageSwitcher />
             <IconButton
               size="large"
               aria-label="account menu"
@@ -191,18 +196,11 @@ export default function Navigation() {
         open={Boolean(anchorEl)}
         onClose={handleProfileMenuClose}
       >
-        <MenuItem onClick={() => { router.push('/profile'); handleProfileMenuClose(); }}>
-          <ListItemIcon>
-            <AccountIcon fontSize="small" />
-          </ListItemIcon>
-          Profil
-        </MenuItem>
-        <Divider />
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
-          Abmelden
+          {t.nav.logout}
         </MenuItem>
       </Menu>
     </>

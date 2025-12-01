@@ -11,9 +11,12 @@ import {
   Alert
 } from '@mui/material';
 import { HourglassEmpty } from '@mui/icons-material';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function PendingLinkPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -34,31 +37,35 @@ export default function PendingLinkPage() {
       >
         <Card sx={{ width: '100%' }}>
           <CardContent sx={{ p: 4, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <LanguageSwitcher />
+            </Box>
+            
             <HourglassEmpty sx={{ fontSize: 80, color: 'primary.main', mb: 3 }} />
             
             <Typography variant="h4" gutterBottom>
-              Account Pending Verification
+              {t.pendingLink.title}
             </Typography>
             
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Your account has been created successfully!
+              {t.pendingLink.subtitle}
             </Typography>
             
             <Alert severity="info" sx={{ textAlign: 'left' }}>
               <Typography variant="subtitle2" gutterBottom>
-                Next Steps:
+                {t.pendingLink.nextSteps}
               </Typography>
               <Typography variant="body2">
-                1. An administrator needs to link your account to a Meyton shooter profile
+                1. {t.pendingLink.step1}
                 <br />
-                2. You will receive access to your dashboard once linked
+                2. {t.pendingLink.step2}
                 <br />
-                3. Please contact your club administrator to complete the setup
+                3. {t.pendingLink.step3}
               </Typography>
             </Alert>
             
             <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-              This usually takes 1-2 business days
+              {t.pendingLink.timeframe}
             </Typography>
           </CardContent>
         </Card>

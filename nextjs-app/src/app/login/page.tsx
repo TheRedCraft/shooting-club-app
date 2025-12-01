@@ -14,10 +14,14 @@ import {
 } from '@mui/material';
 import { authService } from '@/lib/client/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ClubLogo from '@/components/ClubLogo';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -60,11 +64,15 @@ export default function LoginPage() {
       >
         <Card sx={{ width: '100%' }}>
           <CardContent sx={{ p: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom align="center">
-              Shooting Club Analytics
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <LanguageSwitcher />
+            </Box>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <ClubLogo variant="h4" />
+            </Box>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-              Login to access your shooting statistics
+              {t.login.title}
             </Typography>
 
             {error && (
@@ -76,7 +84,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
-                label="Email or Username"
+                label={t.login.username}
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -86,7 +94,7 @@ export default function LoginPage() {
               />
               <TextField
                 fullWidth
-                label="Password"
+                label={t.login.password}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -101,14 +109,14 @@ export default function LoginPage() {
                 disabled={loading}
                 sx={{ mt: 3, mb: 2 }}
               >
-                {loading ? 'Logging in...' : 'Login'}
+                {loading ? `${t.common.loading}...` : t.login.loginButton}
               </Button>
               <Button
                 fullWidth
                 variant="text"
                 onClick={() => router.push('/register')}
               >
-                Don't have an account? Register
+                {t.login.noAccount} {t.login.registerButton}
               </Button>
             </form>
           </CardContent>

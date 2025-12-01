@@ -33,6 +33,7 @@ import {
   LinkOff as UnlinkIcon
 } from '@mui/icons-material';
 import { adminService } from '@/lib/client/api';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface User {
   id: number;
@@ -46,6 +47,7 @@ interface User {
 }
 
 export default function UserManagementTab() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function UserManagementTab() {
       // Get all users, not just linked ones
       setUsers(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Laden der Benutzer');
+      setError(err.response?.data?.message || t.admin.userManagement.errorLoading);
     } finally {
       setLoading(false);
     }
@@ -81,13 +83,13 @@ export default function UserManagementTab() {
 
     try {
       await adminService.deleteUser(userToDelete.id);
-      setSuccess(`Benutzer "${userToDelete.username}" wurde gelöscht`);
+      setSuccess(t.admin.userManagement.deleteSuccess.replace('{username}', userToDelete.username));
       setUsers(users.filter(u => u.id !== userToDelete.id));
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Löschen des Benutzers');
+      setError(err.response?.data?.message || t.admin.userManagement.errorDelete);
       setDeleteDialogOpen(false);
     }
   };
@@ -98,33 +100,34 @@ export default function UserManagementTab() {
   };
 
   const handleUnlink = async (user: User) => {
-    if (!confirm(`Möchten Sie die Verknüpfung von "${user.username}" wirklich aufheben?`)) {
+    if (!confirm(t.admin.userManagement.confirmUnlink.replace('{username}', user.username))) {
       return;
     }
 
     try {
       await adminService.unlinkUser(user.id);
-      setSuccess(`Verknüpfung von ${user.username} wurde aufgehoben`);
+      setSuccess(t.admin.userManagement.unlinkSuccess.replace('{username}', user.username));
       await loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Trennen der Verknüpfung');
+      setError(err.response?.data?.message || t.admin.userManagement.errorUnlink);
     }
   };
 
   const handleToggleAdmin = async (user: User, makeAdmin: boolean) => {
-    const action = makeAdmin ? 'zum Admin machen' : 'Admin-Rechte entziehen';
-    if (!confirm(`Möchten Sie "${user.username}" wirklich ${action}?`)) {
+    const action = makeAdmin ? t.admin.userManagement.makeAdminAction : t.admin.userManagement.removeAdminAction;
+    if (!confirm(t.admin.userManagement.confirmToggleAdmin.replace('{username}', user.username).replace('{action}', action))) {
       return;
     }
 
     try {
       await adminService.toggleAdmin(user.id, makeAdmin);
-      setSuccess(`${user.username} ${makeAdmin ? 'ist jetzt Admin' : 'ist kein Admin mehr'}`);
+      const status = makeAdmin ? t.admin.userManagement.isNowAdmin : t.admin.userManagement.isNoLongerAdmin;
+      setSuccess(t.admin.userManagement.toggleAdminSuccess.replace('{username}', user.username).replace('{status}', status));
       await loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Ändern der Admin-Rechte');
+      setError(err.response?.data?.message || t.admin.userManagement.errorToggleAdmin);
     }
   };
 
@@ -151,20 +154,20 @@ export default function UserManagementTab() {
       )}
 
       <Typography variant="body2" color="text.secondary" paragraph>
-        Übersicht aller Benutzer mit Admin-Rechten und Verknüpfungsstatus.
+        {t.admin.userManagement.description}
       </Typography>
 
       <TableContainer component={Paper} variant="outlined">
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Benutzername</TableCell>
-              <TableCell>E-Mail</TableCell>
-              <TableCell>Rolle</TableCell>
-              <TableCell>Verknüpfung</TableCell>
-              <TableCell>Schütze</TableCell>
-              <TableCell>Registriert</TableCell>
-              <TableCell align="right">Aktionen</TableCell>
+              <TableCell>{t.admin.userManagement.username}</TableCell>
+              <TableCell>{t.admin.userManagement.email}</TableCell>
+              <TableCell>{t.admin.userManagement.role}</TableCell>
+              <TableCell>{t.admin.userManagement.linkStatus}</TableCell>
+              <TableCell>{t.admin.userManagement.shooter}</TableCell>
+              <TableCell>{t.admin.userManagement.registered}</TableCell>
+              <TableCell align="right">{t.admin.userManagement.actions}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -172,7 +175,7 @@ export default function UserManagementTab() {
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="text.secondary">
-                    Keine Benutzer gefunden
+                    {t.admin.userManagement.noUsers}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -183,7 +186,7 @@ export default function UserManagementTab() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {user.username}
                       {user.is_admin && (
-                        <Tooltip title="Administrator">
+                        <Tooltip title={t.admin.userManagement.administrator}>
                           <AdminIcon color="primary" fontSize="small" />
                         </Tooltip>
                       )}
@@ -192,7 +195,7 @@ export default function UserManagementTab() {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip
-                      label={user.is_admin ? 'Admin' : 'Benutzer'}
+                      label={user.is_admin ? t.admin.userManagement.admin : t.admin.userManagement.user}
                       color={user.is_admin ? 'primary' : 'default'}
                       size="small"
                     />
@@ -201,14 +204,14 @@ export default function UserManagementTab() {
                     {user.is_linked ? (
                       <Chip
                         icon={<LinkIcon />}
-                        label="Verknüpft"
+                        label={t.admin.userManagement.linked}
                         color="success"
                         size="small"
                       />
                     ) : (
                       <Chip
                         icon={<UnlinkIcon />}
-                        label="Nicht verknüpft"
+                        label={t.admin.userManagement.notLinked}
                         color="warning"
                         size="small"
                       />
@@ -233,7 +236,7 @@ export default function UserManagementTab() {
                   </TableCell>
                   <TableCell align="right">
                     {user.is_admin ? (
-                      <Tooltip title="Admin-Rechte entziehen">
+                      <Tooltip title={t.admin.userManagement.removeAdmin}>
                         <IconButton
                           size="small"
                           onClick={() => handleToggleAdmin(user, false)}
@@ -243,7 +246,7 @@ export default function UserManagementTab() {
                         </IconButton>
                       </Tooltip>
                     ) : (
-                      <Tooltip title="Zum Admin machen">
+                      <Tooltip title={t.admin.userManagement.makeAdmin}>
                         <IconButton
                           size="small"
                           onClick={() => handleToggleAdmin(user, true)}
@@ -254,7 +257,7 @@ export default function UserManagementTab() {
                       </Tooltip>
                     )}
                     {user.is_linked && (
-                      <Tooltip title="Verknüpfung aufheben">
+                      <Tooltip title={t.admin.userManagement.unlink}>
                         <IconButton
                           size="small"
                           onClick={() => handleUnlink(user)}
@@ -264,7 +267,7 @@ export default function UserManagementTab() {
                         </IconButton>
                       </Tooltip>
                     )}
-                    <Tooltip title="Benutzer löschen">
+                    <Tooltip title={t.admin.userManagement.delete}>
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteClick(user)}
@@ -283,27 +286,25 @@ export default function UserManagementTab() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
-        <DialogTitle>Benutzer löschen</DialogTitle>
+        <DialogTitle>{t.admin.userManagement.delete}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Möchten Sie den Benutzer <strong>{userToDelete?.username}</strong> wirklich
-            löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+            {t.admin.userManagement.confirmDeleteDialog.replace('{username}', userToDelete?.username || '')}
             {userToDelete?.is_linked && (
               <>
                 <br />
                 <br />
-                <strong>Hinweis:</strong> Der Benutzer ist mit einem Schützen verknüpft.
-                Die Verknüpfung wird ebenfalls gelöscht.
+                <strong>{t.admin.userManagement.confirmDeleteLinked}</strong>
               </>
             )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="primary">
-            Abbrechen
+            {t.common.cancel}
           </Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Löschen
+            {t.admin.userManagement.delete}
           </Button>
         </DialogActions>
       </Dialog>

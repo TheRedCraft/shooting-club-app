@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { CheckCircle as ApproveIcon, Cancel as RejectIcon } from '@mui/icons-material';
 import { adminService } from '@/lib/client/api';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface PendingUser {
   id: number;
@@ -27,6 +28,7 @@ interface PendingUser {
 }
 
 export default function PendingUsersTab() {
+  const { t } = useLanguage();
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function PendingUsersTab() {
       const response = await adminService.getPendingUsers();
       setPendingUsers(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Laden der Benutzer');
+      setError(err.response?.data?.message || t.admin.pending.errorLoading);
     } finally {
       setLoading(false);
     }
@@ -52,26 +54,26 @@ export default function PendingUsersTab() {
   const handleApprove = async (userId: number, username: string) => {
     try {
       await adminService.approveUser(userId);
-      setSuccess(`Benutzer "${username}" wurde freigegeben und kann jetzt einem Schützen zugeordnet werden`);
+      setSuccess(t.admin.pending.approveSuccess.replace('{username}', username));
       setPendingUsers(pendingUsers.filter(u => u.id !== userId));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Freigeben des Benutzers');
+      setError(err.response?.data?.message || t.admin.pending.errorApprove);
     }
   };
 
   const handleReject = async (userId: number, username: string) => {
-    if (!confirm(`Möchten Sie den Benutzer "${username}" wirklich ablehnen und löschen?`)) {
+    if (!confirm(t.admin.pending.rejectConfirm.replace('{username}', username))) {
       return;
     }
 
     try {
       await adminService.deleteUser(userId);
-      setSuccess(`Benutzer "${username}" wurde abgelehnt und gelöscht`);
+      setSuccess(t.admin.pending.rejectSuccess.replace('{username}', username));
       setPendingUsers(pendingUsers.filter(u => u.id !== userId));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Fehler beim Ablehnen des Benutzers');
+      setError(err.response?.data?.message || t.admin.pending.errorReject);
     }
   };
 
@@ -98,23 +100,23 @@ export default function PendingUsersTab() {
       )}
 
       <Typography variant="body2" color="text.secondary" paragraph>
-        Benutzer, die sich registriert haben und auf Freigabe warten.
+        {t.admin.pending.description}
       </Typography>
 
       {pendingUsers.length === 0 ? (
         <Alert severity="info">
-          Keine ausstehenden Freigabe-Anfragen
+          {t.admin.pending.noRequests}
         </Alert>
       ) : (
         <TableContainer component={Paper} variant="outlined">
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Benutzername</TableCell>
-                <TableCell>E-Mail</TableCell>
-                <TableCell>Registriert am</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Aktionen</TableCell>
+                <TableCell>{t.admin.pending.username}</TableCell>
+                <TableCell>{t.admin.pending.email}</TableCell>
+                <TableCell>{t.admin.pending.requestDate}</TableCell>
+                <TableCell>{t.admin.pending.status}</TableCell>
+                <TableCell align="right">{t.admin.pending.actions}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -126,7 +128,7 @@ export default function PendingUsersTab() {
                     {new Date(user.created_at).toLocaleDateString('de-DE')}
                   </TableCell>
                   <TableCell>
-                    <Chip label="Ausstehend" color="warning" size="small" />
+                    <Chip label={t.admin.pending.pending} color="warning" size="small" />
                   </TableCell>
                   <TableCell align="right">
                     <Button
@@ -137,7 +139,7 @@ export default function PendingUsersTab() {
                       onClick={() => handleApprove(user.id, user.username)}
                       sx={{ mr: 1 }}
                     >
-                      Freigeben
+                      {t.admin.pending.approve}
                     </Button>
                     <Button
                       size="small"
@@ -146,7 +148,7 @@ export default function PendingUsersTab() {
                       startIcon={<RejectIcon />}
                       onClick={() => handleReject(user.id, user.username)}
                     >
-                      Ablehnen
+                      {t.admin.pending.reject}
                     </Button>
                   </TableCell>
                 </TableRow>

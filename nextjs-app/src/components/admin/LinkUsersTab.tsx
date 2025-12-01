@@ -26,6 +26,7 @@ import {
   Search as SearchIcon
 } from '@mui/icons-material';
 import { adminService } from '@/lib/client/api';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface User {
   id: number;
@@ -45,6 +46,7 @@ interface MeytonShooter {
 }
 
 export default function LinkUsersTab() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
   const [shooters, setShooters] = useState<MeytonShooter[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -79,7 +81,7 @@ export default function LinkUsersTab() {
 
   const handleLinkUser = async () => {
     if (!selectedUser || !selectedShooter) {
-      setError('Bitte wählen Sie einen Benutzer und einen Schützen aus');
+      setError(t.admin.linkUsers.selectBoth);
       return;
     }
 
@@ -89,7 +91,9 @@ export default function LinkUsersTab() {
       await adminService.linkUser(selectedUser.id, selectedShooter.ShooterID);
       
       setSuccess(
-        `${selectedUser.username} wurde mit ${selectedShooter.Firstname} ${selectedShooter.Lastname} verknüpft`
+        t.admin.linkUsers.linkedSuccess
+          .replace('{user}', selectedUser.username)
+          .replace('{shooter}', `${selectedShooter.Firstname} ${selectedShooter.Lastname}`)
       );
       
       // Reset selections first
@@ -108,7 +112,7 @@ export default function LinkUsersTab() {
   };
 
   const handleUnlinkUser = async (user: User) => {
-    if (!confirm(`Möchten Sie die Verknüpfung von "${user.username}" wirklich aufheben?`)) {
+    if (!confirm(t.admin.linkUsers.confirmUnlink.replace('{username}', user.username))) {
       return;
     }
 
@@ -117,7 +121,7 @@ export default function LinkUsersTab() {
       
       await adminService.unlinkUser(user.id);
       
-      setSuccess(`Verknüpfung von ${user.username} wurde aufgehoben`);
+      setSuccess(t.admin.linkUsers.unlinkedSuccess.replace('{user}', user.username));
       
       // Reload data
       await loadData();
@@ -169,7 +173,7 @@ export default function LinkUsersTab() {
       )}
 
       <Typography variant="body2" color="text.secondary" paragraph>
-        Ordnen Sie Benutzer den Schützen aus der Meyton-Datenbank zu.
+        {t.admin.linkUsers.description}
       </Typography>
 
       <Grid container spacing={3}>
@@ -178,15 +182,15 @@ export default function LinkUsersTab() {
           <Paper variant="outlined" sx={{ height: 400, overflow: 'auto' }}>
             <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PersonIcon /> Benutzer ohne Zuordnung
+                <PersonIcon /> {t.admin.linkUsers.unlinkedUsers}
               </Typography>
             </Box>
             <List>
               {unlinkedUsers.length === 0 ? (
                 <ListItem>
                   <ListItemText 
-                    primary="Keine Benutzer verfügbar" 
-                    secondary="Alle Benutzer sind bereits zugeordnet"
+                    primary={t.admin.linkUsers.noUsers} 
+                    secondary={t.admin.linkUsers.allLinked}
                   />
                 </ListItem>
               ) : (
@@ -212,14 +216,14 @@ export default function LinkUsersTab() {
           <Paper variant="outlined" sx={{ height: 400, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ p: 2, bgcolor: 'success.main', color: 'white' }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ShooterIcon /> Verfügbare Schützen
+                <ShooterIcon /> {t.admin.linkUsers.availableShooters}
               </Typography>
             </Box>
             <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Suche nach Name oder ID..."
+                placeholder={t.admin.linkUsers.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 InputProps={{
@@ -235,8 +239,8 @@ export default function LinkUsersTab() {
               {availableShooters.length === 0 ? (
                 <ListItem>
                   <ListItemText 
-                    primary={searchQuery ? "Keine Ergebnisse" : "Keine Schützen verfügbar"} 
-                    secondary={searchQuery ? "Versuche einen anderen Suchbegriff" : "Alle Schützen sind bereits zugeordnet"}
+                    primary={searchQuery ? t.admin.linkUsers.noResults : t.admin.linkUsers.noShooters} 
+                    secondary={searchQuery ? t.admin.linkUsers.tryDifferent : t.admin.linkUsers.allLinked}
                   />
                 </ListItem>
               ) : (
@@ -244,7 +248,7 @@ export default function LinkUsersTab() {
                   {searchQuery && (
                     <ListItem>
                       <Typography variant="caption" color="text.secondary">
-                        {availableShooters.length} Ergebnis{availableShooters.length !== 1 ? 'se' : ''}
+                        {availableShooters.length} {availableShooters.length === 1 ? t.admin.linkUsers.results : t.admin.linkUsers.resultsPlural}
                       </Typography>
                     </ListItem>
                   )}
@@ -277,13 +281,13 @@ export default function LinkUsersTab() {
           <Paper variant="outlined" sx={{ height: 400, overflow: 'auto' }}>
             <Box sx={{ p: 2, bgcolor: 'info.main', color: 'white' }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LinkIcon /> Verknüpfte Benutzer
+                <LinkIcon /> {t.admin.linkUsers.linkedUsers}
               </Typography>
             </Box>
             <List>
               {linkedUsers.length === 0 ? (
                 <ListItem>
-                  <ListItemText primary="Keine verknüpften Benutzer" />
+                  <ListItemText primary={t.admin.linkUsers.noUsers} />
                 </ListItem>
               ) : (
                 linkedUsers.map((user) => (
@@ -308,7 +312,7 @@ export default function LinkUsersTab() {
                           </Typography>
                           <Chip 
                             label={`ID: ${user.shooter_id}`} 
-                            size="small"
+                            size="small" 
                             component="span"
                           />
                         </Box>
@@ -337,7 +341,7 @@ export default function LinkUsersTab() {
           disabled={!selectedUser || !selectedShooter}
           sx={{ minWidth: 300 }}
         >
-          Verknüpfen
+          {t.admin.linkUsers.linkButton}
         </Button>
         {selectedUser && selectedShooter && (
           <Typography variant="caption" display="block" sx={{ mt: 1 }}>

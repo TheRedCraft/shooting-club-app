@@ -32,6 +32,7 @@ import {
 } from 'recharts';
 import { TrendingUp, ShowChart, BarChart as BarChartIcon } from '@mui/icons-material';
 import api from '@/lib/client/api';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface TrendDialogProps {
   open: boolean;
@@ -43,6 +44,7 @@ interface TrendDialogProps {
 export default function TrendDialog({ open, onClose, metric, title }: TrendDialogProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useLanguage();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,11 +68,11 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
       if (response.data.success) {
         setTrendData(response.data.data || []);
       } else {
-        setError(response.data.message || 'Fehler beim Laden der Trend-Daten');
+        setError(response.data.message || t.trends.loading);
       }
     } catch (err: any) {
       console.error('Error loading trend data:', err);
-      setError(err.response?.data?.message || 'Fehler beim Laden der Trend-Daten');
+      setError(err.response?.data?.message || t.trends.loading);
     } finally {
       setLoading(false);
     }
@@ -139,7 +141,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
     if (trendData.length === 0) {
       return (
         <Alert severity="info" sx={{ my: 2 }}>
-          Keine Daten für den ausgewählten Zeitraum verfügbar.
+          {t.trends.noData}
         </Alert>
       );
     }
@@ -259,7 +261,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <TrendingUp />
-          <Typography variant="h6">{title} - Trend</Typography>
+          <Typography variant="h6">{title} - {t.trends.title}</Typography>
         </Box>
       </DialogTitle>
       
@@ -276,7 +278,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
           {/* Period Selection */}
           <Box>
             <Typography variant="caption" color="text.secondary" gutterBottom>
-              Zeitraum
+              {t.leaderboard.timeRange}
             </Typography>
             <ToggleButtonGroup
               value={period}
@@ -285,16 +287,16 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
               size="small"
               fullWidth={isMobile}
             >
-              <ToggleButton value="daily">Täglich</ToggleButton>
-              <ToggleButton value="weekly">Wöchentlich</ToggleButton>
-              <ToggleButton value="monthly">Monatlich</ToggleButton>
+              <ToggleButton value="daily">{t.trends.period.daily}</ToggleButton>
+              <ToggleButton value="weekly">{t.trends.period.weekly}</ToggleButton>
+              <ToggleButton value="monthly">{t.trends.period.monthly}</ToggleButton>
             </ToggleButtonGroup>
           </Box>
           
           {/* Chart Type Selection */}
           <Box>
             <Typography variant="caption" color="text.secondary" gutterBottom>
-              Darstellung
+              {t.common.filter}
             </Typography>
             <ToggleButtonGroup
               value={chartType}
@@ -305,15 +307,15 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
             >
               <ToggleButton value="line">
                 <ShowChart sx={{ mr: isMobile ? 0 : 1 }} />
-                {!isMobile && 'Linie'}
+                {!isMobile && t.trends.chartType.line}
               </ToggleButton>
               <ToggleButton value="bar">
                 <BarChartIcon sx={{ mr: isMobile ? 0 : 1 }} />
-                {!isMobile && 'Balken'}
+                {!isMobile && t.trends.chartType.bar}
               </ToggleButton>
               <ToggleButton value="area">
                 <TrendingUp sx={{ mr: isMobile ? 0 : 1 }} />
-                {!isMobile && 'Fläche'}
+                {!isMobile && t.trends.chartType.area}
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
@@ -337,7 +339,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
           }}>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Aktuellster Wert
+                {t.trends.stats.latest}
               </Typography>
               <Typography variant="h6">
                 {trendData[trendData.length - 1].value} {getMetricUnit()}
@@ -345,7 +347,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Durchschnitt
+                {t.trends.stats.average}
               </Typography>
               <Typography variant="h6">
                 {(trendData.reduce((sum, d) => sum + d.value, 0) / trendData.length).toFixed(2)} {getMetricUnit()}
@@ -353,7 +355,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                {(metric === 'bestTeiler' || metric === 'avgSpread' || metric === 'avgOffset') ? 'Niedrigster' : 'Höchster'} Wert
+                {(metric === 'bestTeiler' || metric === 'avgSpread' || metric === 'avgOffset') ? t.trends.stats.lowest : t.trends.stats.highest}
               </Typography>
               <Typography variant="h6">
                 {(metric === 'bestTeiler' || metric === 'avgSpread' || metric === 'avgOffset')
@@ -365,7 +367,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
             {trendData.length >= 2 && (
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Entwicklung
+                  {t.trends.stats.trend}
                 </Typography>
                 <Typography 
                   variant="h6" 
@@ -388,7 +390,7 @@ export default function TrendDialog({ open, onClose, metric, title }: TrendDialo
       </DialogContent>
       
       <DialogActions>
-        <Button onClick={onClose}>Schließen</Button>
+        <Button onClick={onClose}>{t.common.close}</Button>
       </DialogActions>
     </Dialog>
   );

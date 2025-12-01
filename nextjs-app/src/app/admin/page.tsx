@@ -17,6 +17,7 @@ import {
   People as PeopleIcon
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import PendingUsersTab from '@/components/admin/PendingUsersTab';
 import LinkUsersTab from '@/components/admin/LinkUsersTab';
 import UserManagementTab from '@/components/admin/UserManagementTab';
@@ -46,6 +47,7 @@ function TabPanel(props: TabPanelProps) {
 export default function AdminPanel() {
   const router = useRouter();
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { t } = useLanguage();
   const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
@@ -81,10 +83,10 @@ export default function AdminPanel() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Admin Panel
+        {t.admin.title}
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        Benutzerverwaltung und Schützen-Zuordnung
+        {t.admin.linkUsers.description}
       </Typography>
 
       <Paper sx={{ mt: 3 }}>
@@ -96,19 +98,19 @@ export default function AdminPanel() {
         >
           <Tab
             icon={<PersonAddIcon />}
-            label="Freigabe-Anfragen"
+            label={t.admin.tabs.pending}
             id="admin-tab-0"
             aria-controls="admin-tabpanel-0"
           />
           <Tab
             icon={<LinkIcon />}
-            label="Schützen zuordnen"
+            label={t.admin.tabs.linkUsers}
             id="admin-tab-1"
             aria-controls="admin-tabpanel-1"
           />
           <Tab
             icon={<PeopleIcon />}
-            label="Benutzerverwaltung"
+            label={t.admin.tabs.userManagement}
             id="admin-tab-2"
             aria-controls="admin-tabpanel-2"
           />
