@@ -302,17 +302,20 @@ export default function LinkUsersTab() {
                     <ListItemText
                       primary={user.username}
                       secondary={
-                        <Box component="span" sx={{ display: 'block' }}>
-                          <Typography variant="caption" component="span" display="block">
+                        <Box component="span" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          <Typography variant="body2" component="span" color="text.secondary">
                             {user.shooter_name}
                           </Typography>
                           <Chip 
                             label={`ID: ${user.shooter_id}`} 
-                            size="small" 
-                            sx={{ mt: 0.5 }}
+                            size="small"
+                            component="span"
                           />
                         </Box>
                       }
+                      secondaryTypographyProps={{
+                        component: 'span'
+                      }}
                     />
                   </ListItem>
                 ))
