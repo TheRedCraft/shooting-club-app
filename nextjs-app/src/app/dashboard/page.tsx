@@ -106,7 +106,13 @@ export default function DashboardPage() {
       setPagination(sessionsRes.data.pagination || null);
     } catch (err: any) {
       console.error('Error loading dashboard:', err);
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
+      // Check if it's the specific "Failed to get stats" error
+      const errorMessage = err.response?.data?.message;
+      if (errorMessage === 'Failed to get stats') {
+        setError(t.dashboard.failedToGetStats);
+      } else {
+        setError(errorMessage || t.dashboard.error);
+      }
     } finally {
       setLoading(false);
     }

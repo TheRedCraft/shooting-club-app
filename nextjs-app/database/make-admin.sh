@@ -8,8 +8,8 @@ set -e
 DB_HOST="localhost"
 DB_PORT="5432"
 DB_NAME="shooting_club"
-DB_USER="dbuser"
-DB_PASS="dbpassword"
+DB_USER="vsgschuetzenadm"
+DB_PASS="!M2%2PCpwE85xxZK"
 
 echo "🔧 Shooting Club - Database Update & Admin Setup"
 echo "================================================="
@@ -32,6 +32,7 @@ SELECT
     email, 
     is_admin, 
     is_linked, 
+    status,
     shooter_id 
 FROM users 
 ORDER BY id;
@@ -48,16 +49,18 @@ else
 fi
 
 echo ""
-echo "🔑 Step 3: Making '$USER_INPUT' an admin..."
+echo "🔑 Step 3: Making '$USER_INPUT' an admin and approving user..."
 
 # Try by email first, then by username
 PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << EOF
 UPDATE users 
-SET is_admin = true 
+SET 
+    is_admin = true,
+    status = 'APPROVED'
 WHERE email = '$USER_INPUT' OR username = '$USER_INPUT';
 EOF
 
-echo "✅ Admin rights granted!"
+echo "✅ Admin rights granted and user approved!"
 echo ""
 
 # Step 4: Show admins
@@ -68,7 +71,9 @@ SELECT
     id, 
     username, 
     email, 
-    is_admin 
+    is_admin,
+    status,
+    is_linked
 FROM users 
 WHERE is_admin = true;
 "

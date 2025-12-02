@@ -1,59 +1,4 @@
 
-## ⚠️ HOHE PRIORITÄT
-
-### 4. Kein Rate Limiting
-**Schweregrad:** 🟠 HOCH  
-**Datei:** `nextjs-app/src/app/api/auth/login/route.ts`
-
-**Problem:**
-- Login-Endpoint hat kein Rate Limiting
-- Brute-Force Angriffe möglich
-- Keine Schutzmaßnahmen gegen Credential Stuffing
-
-**Lösung:**
-- ✅ Rate Limiting implementieren (z.B. `next-rate-limit` oder `express-rate-limit`)
-- ✅ Max. 5 Login-Versuche pro IP/15 Minuten
-- ✅ Account-Lockout nach X fehlgeschlagenen Versuchen
-
----
-
-### 5. Keine Passwort-Policy
-**Schweregrad:** 🟠 HOCH  
-**Datei:** `nextjs-app/src/app/api/auth/register/route.ts`
-
-**Problem:**
-- Keine Mindestlänge
-- Keine Komplexitäts-Anforderungen
-- Schwache Passwörter erlaubt
-
-**Lösung:**
-- ✅ Mindestlänge: 8 Zeichen
-- ✅ Mindestens 1 Großbuchstabe, 1 Zahl, 1 Sonderzeichen
-- ✅ Passwort-Validierung im Frontend und Backend
-
----
-
-### 6. Session ID nicht validiert
-**Schweregrad:** 🟠 HOCH  
-**Datei:** `nextjs-app/src/app/api/sessions/[id]/shots/route.ts`
-
-**Problem:**
-```typescript
-const sessionId = params.id;  // ❌ Keine Validierung!
-// Wird direkt in SQL Query verwendet
-```
-
-**Risiko:**
-- SQL Injection möglich (wenn nicht parameterized)
-- Zugriff auf fremde Sessions möglich
-- Keine Prüfung ob Session zum User gehört
-
-**Lösung:**
-- ✅ Session ID validieren (Format, Typ)
-- ✅ Prüfen ob Session zum eingeloggten User gehört
-- ✅ Parameterized Queries verwenden (✅ bereits vorhanden)
-
----
 
 ## ⚡ MITTLERE PRIORITÄT
 
@@ -122,33 +67,6 @@ const nextConfig: NextConfig = {
 
 ---
 
-### 10. Information Disclosure
-**Schweregrad:** 🟡 MITTEL  
-**Mehrere API-Routes**
-
-**Problem:**
-- Fehlermeldungen könnten sensible Informationen preisgeben
-- Stack Traces in Production sichtbar
-- User-IDs in Fehlermeldungen
-
-**Lösung:**
-- ✅ Generische Fehlermeldungen in Production
-- ✅ Keine Stack Traces an Client senden
-- ✅ Strukturiertes Logging für Debugging
-
----
-
-## 📋 NIEDRIGE PRIORITÄT
-
-### 11. Kein HTTPS Enforcement
-**Schweregrad:** 🟢 NIEDRIG  
-**Datei:** `nextjs-app/next.config.ts`
-
-**Lösung:**
-- ✅ HTTPS Redirect in Production
-- ✅ HSTS Header setzen
-
----
 
 ### 12. JWT Token in localStorage
 **Schweregrad:** 🟢 NIEDRIG  

@@ -16,6 +16,7 @@ import { authService } from '@/lib/client/api';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ClubLogo from '@/components/ClubLogo';
+import { validatePassword } from '@/lib/utils/passwordValidation';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,13 +27,26 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setPasswordErrors([]);
 
+    // Validate password match
     if (password !== confirmPassword) {
       setError(t.register.passwordMismatch);
+      return;
+    }
+
+    // SECURITY: Validate password policy
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setPasswordErrors(passwordValidation.errors);
+      // Show first error as main error
+      const firstErrorKey = passwordValidation.errors[0];
+      setError(t.register[firstErrorKey as keyof typeof t.register] as string || 'Password does not meet requirements');
       return;
     }
 
@@ -49,7 +63,15 @@ export default function RegisterPage() {
       // Redirect to pending link page
       router.push('/pending-link');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      const errorMessage = err.response?.data?.message;
+      // Check if backend returned password validation errors
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        setPasswordErrors(err.response.data.errors);
+        const firstErrorKey = err.response.data.errors[0];
+        setError(t.register[firstErrorKey as keyof typeof t.register] as string || errorMessage || 'Registration failed');
+      } else {
+        setError(errorMessage || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -109,10 +131,41 @@ export default function RegisterPage() {
                 label={t.register.password}
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  // Validate on change
+                  const validation = validatePassword(e.target.value);
+                  setPasswordErrors(validation.errors);
+                }}
                 margin="normal"
                 required
+                error={passwordErrors.length > 0}
+                helperText={
+                  passwordErrors.length > 0 
+                    ? passwordErrors.map(err => t.register[err as keyof typeof t.register]).join(', ')
+                    : ''
+                }
               />
+              <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                  {t.register.passwordRequirements}
+                </Typography>
+                <Typography variant="caption" color={password.length >= 8 ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+                  ✓ {t.register.passwordRequirementLength}
+                </Typography>
+                <Typography variant="caption" color={/[A-Z]/.test(password) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+                  ✓ {t.register.passwordRequirementUppercase}
+                </Typography>
+                <Typography variant="caption" color={/[a-z]/.test(password) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+                  ✓ {t.register.passwordRequirementLowercase}
+                </Typography>
+                <Typography variant="caption" color={/[0-9]/.test(password) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+                  ✓ {t.register.passwordRequirementNumber}
+                </Typography>
+                <Typography variant="caption" color={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+                  ✓ {t.register.passwordRequirementSpecialChar}
+                </Typography>
+              </Box>
               <TextField
                 fullWidth
                 label={t.register.confirmPassword}
@@ -121,6 +174,12 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 margin="normal"
                 required
+                error={confirmPassword !== '' && password !== confirmPassword}
+                helperText={
+                  confirmPassword !== '' && password !== confirmPassword
+                    ? t.register.passwordMismatch
+                    : ''
+                }
               />
               <Button
                 fullWidth

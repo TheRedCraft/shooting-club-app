@@ -30,10 +30,12 @@ import {
   AdminPanelSettings as AdminIcon,
   PersonRemove as RemoveAdminIcon,
   Link as LinkIcon,
-  LinkOff as UnlinkIcon
+  LinkOff as UnlinkIcon,
+  Lock as LockIcon
 } from '@mui/icons-material';
 import { adminService } from '@/lib/client/api';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { validatePassword } from '@/lib/utils/passwordValidation';
 
 interface User {
   id: number;
@@ -44,6 +46,7 @@ interface User {
   shooter_id: string | null;
   shooter_name: string | null;
   created_at: string;
+  is_super_admin?: boolean;
 }
 
 export default function UserManagementTab() {
@@ -54,6 +57,13 @@ export default function UserManagementTab() {
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [userToChangePassword, setUserToChangePassword] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const loadUsers = async () => {
     try {
@@ -97,6 +107,69 @@ export default function UserManagementTab() {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setUserToDelete(null);
+  };
+
+  const handlePasswordChangeClick = (user: User) => {
+    setUserToChangePassword(user);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordSuccess(false);
+    setPasswordDialogOpen(true);
+  };
+
+  const handlePasswordChangeConfirm = async () => {
+    if (!userToChangePassword) return;
+
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t.register.passwordMismatch);
+      return;
+    }
+
+    // Validate password policy
+    const validation = validatePassword(newPassword);
+    if (!validation.isValid) {
+      const firstError = validation.errors[0];
+      setPasswordError(t.register[firstError as keyof typeof t.register] as string || 'Password does not meet requirements');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await adminService.changeUserPassword(userToChangePassword.id, newPassword);
+      setPasswordSuccess(true);
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setPasswordDialogOpen(false);
+        setPasswordSuccess(false);
+        setUserToChangePassword(null);
+      }, 2000);
+    } catch (err: any) {
+      let errorMessage = err.response?.data?.message || 'Failed to change password';
+      
+      // Translate common error messages
+      if (errorMessage.includes('Super-Administrator') || errorMessage.includes('Super-Admin')) {
+        errorMessage = t.admin.userManagement.superAdminPasswordProtected;
+      }
+      
+      setPasswordError(errorMessage);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handlePasswordChangeCancel = () => {
+    setPasswordDialogOpen(false);
+    setUserToChangePassword(null);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordSuccess(false);
   };
 
   const handleUnlink = async (user: User) => {
@@ -256,6 +329,28 @@ export default function UserManagementTab() {
                         </IconButton>
                       </Tooltip>
                     )}
+                    {!user.is_super_admin && (
+                      <Tooltip title="Passwort ändern">
+                        <IconButton
+                          size="small"
+                          onClick={() => handlePasswordChangeClick(user)}
+                          color="primary"
+                        >
+                          <LockIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {user.is_super_admin && (
+                      <Tooltip title="Das Passwort des Super-Administrators kann nicht von anderen geändert werden">
+                        <IconButton
+                          size="small"
+                          disabled
+                          color="default"
+                        >
+                          <LockIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {user.is_linked && (
                       <Tooltip title={t.admin.userManagement.unlink}>
                         <IconButton
@@ -305,6 +400,86 @@ export default function UserManagementTab() {
           </Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
             {t.admin.userManagement.delete}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialogOpen} onClose={handlePasswordChangeCancel} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Passwort ändern für {userToChangePassword?.username}
+        </DialogTitle>
+        <DialogContent>
+          {passwordSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Passwort erfolgreich geändert!
+            </Alert>
+          )}
+          {passwordError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {passwordError}
+            </Alert>
+          )}
+          <TextField
+            fullWidth
+            label="Neues Passwort"
+            type="password"
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setPasswordError('');
+            }}
+            margin="normal"
+            required
+            disabled={passwordLoading || passwordSuccess}
+            error={passwordError.includes('password') && !passwordError.includes('Current')}
+          />
+          <TextField
+            fullWidth
+            label="Neues Passwort bestätigen"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setPasswordError('');
+            }}
+            margin="normal"
+            required
+            disabled={passwordLoading || passwordSuccess}
+            error={confirmPassword !== '' && newPassword !== confirmPassword}
+            helperText={
+              confirmPassword !== '' && newPassword !== confirmPassword
+                ? t.register.passwordMismatch
+                : ''
+            }
+          />
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+              {t.register.passwordRequirements}
+            </Typography>
+            <Typography variant="caption" color={newPassword.length >= 8 ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementLength}
+            </Typography>
+            <Typography variant="caption" color={/[A-Z]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementUppercase}
+            </Typography>
+            <Typography variant="caption" color={/[a-z]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementLowercase}
+            </Typography>
+            <Typography variant="caption" color={/[0-9]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementNumber}
+            </Typography>
+            <Typography variant="caption" color={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementSpecialChar}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handlePasswordChangeCancel} disabled={passwordLoading}>
+            {t.common.cancel}
+          </Button>
+          <Button onClick={handlePasswordChangeConfirm} variant="contained" disabled={passwordLoading || passwordSuccess}>
+            {passwordLoading ? 'Wird geändert...' : 'Passwort ändern'}
           </Button>
         </DialogActions>
       </Dialog>

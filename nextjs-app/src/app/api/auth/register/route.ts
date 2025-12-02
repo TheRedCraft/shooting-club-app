@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/postgres';
 import { hashPassword, generateToken } from '@/lib/utils/auth';
+import { validatePassword } from '@/lib/utils/passwordValidation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,37 @@ export async function POST(req: NextRequest) {
     if (!username || !email || !password) {
       return NextResponse.json(
         { success: false, message: 'Username, email, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Password policy validation
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Password does not meet requirements',
+          errors: passwordValidation.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Username validation (alphanumeric and underscore, 3-20 characters)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      return NextResponse.json(
+        { success: false, message: 'Username must be 3-20 characters and contain only letters, numbers, and underscores' },
         { status: 400 }
       );
     }

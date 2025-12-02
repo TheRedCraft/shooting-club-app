@@ -12,7 +12,13 @@ import {
   Grid,
   Divider,
   Chip,
-  Avatar
+  Avatar,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -20,10 +26,13 @@ import {
   AdminPanelSettings as AdminIcon,
   Link as LinkIcon,
   SportsMartialArts as ShooterIcon,
-  CalendarToday as CalendarIcon
+  CalendarToday as CalendarIcon,
+  Lock as LockIcon
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService } from '@/lib/client/api';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { validatePassword } from '@/lib/utils/passwordValidation';
 
 interface ProfileData {
   id: number;
@@ -39,9 +48,17 @@ interface ProfileData {
 export default function ProfilePage() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -65,6 +82,42 @@ export default function ProfilePage() {
 
     loadProfile();
   }, [authLoading, isAuthenticated, router]);
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t.register.passwordMismatch);
+      return;
+    }
+
+    // Validate password policy
+    const validation = validatePassword(newPassword);
+    if (!validation.isValid) {
+      const firstError = validation.errors[0];
+      setPasswordError(t.register[firstError as keyof typeof t.register] as string || 'Password does not meet requirements');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await profileService.changePassword(currentPassword, newPassword);
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setPasswordDialogOpen(false);
+        setPasswordSuccess(false);
+      }, 2000);
+    } catch (err: any) {
+      setPasswordError(err.response?.data?.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -232,8 +285,107 @@ export default function ProfilePage() {
               </Alert>
             </Grid>
           )}
+
+          <Grid size={{ xs: 12 }}>
+            <Divider sx={{ my: 2 }} />
+            <Button
+              variant="outlined"
+              startIcon={<LockIcon />}
+              onClick={() => setPasswordDialogOpen(true)}
+            >
+              Passwort ändern
+            </Button>
+          </Grid>
         </Grid>
       </Paper>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialogOpen} onClose={() => !passwordLoading && setPasswordDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Passwort ändern</DialogTitle>
+        <DialogContent>
+          {passwordSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Passwort erfolgreich geändert!
+            </Alert>
+          )}
+          {passwordError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {passwordError}
+            </Alert>
+          )}
+          <TextField
+            fullWidth
+            label="Aktuelles Passwort"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            margin="normal"
+            required
+            disabled={passwordLoading || passwordSuccess}
+          />
+          <TextField
+            fullWidth
+            label="Neues Passwort"
+            type="password"
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setPasswordError('');
+            }}
+            margin="normal"
+            required
+            disabled={passwordLoading || passwordSuccess}
+            error={passwordError.includes('password') && !passwordError.includes('Current')}
+          />
+          <TextField
+            fullWidth
+            label="Neues Passwort bestätigen"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setPasswordError('');
+            }}
+            margin="normal"
+            required
+            disabled={passwordLoading || passwordSuccess}
+            error={confirmPassword !== '' && newPassword !== confirmPassword}
+            helperText={
+              confirmPassword !== '' && newPassword !== confirmPassword
+                ? t.register.passwordMismatch
+                : ''
+            }
+          />
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+              {t.register.passwordRequirements}
+            </Typography>
+            <Typography variant="caption" color={newPassword.length >= 8 ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementLength}
+            </Typography>
+            <Typography variant="caption" color={/[A-Z]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementUppercase}
+            </Typography>
+            <Typography variant="caption" color={/[a-z]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementLowercase}
+            </Typography>
+            <Typography variant="caption" color={/[0-9]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementNumber}
+            </Typography>
+            <Typography variant="caption" color={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword) ? 'success.main' : 'text.secondary'} sx={{ display: 'block' }}>
+              ✓ {t.register.passwordRequirementSpecialChar}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordDialogOpen(false)} disabled={passwordLoading}>
+            Abbrechen
+          </Button>
+          <Button onClick={handlePasswordChange} variant="contained" disabled={passwordLoading || passwordSuccess}>
+            {passwordLoading ? 'Wird geändert...' : 'Passwort ändern'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

@@ -29,10 +29,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     // Handle 401 Unauthorized errors
+    // BUT: Don't redirect if we're already on the login page (to show error messages)
+    // OR if it's a password change request (401 means wrong current password, not unauthorized)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+      const isRegisterPage = typeof window !== 'undefined' && window.location.pathname === '/register';
+      const isPasswordChangeRequest = error.config?.url?.includes('/change-password');
+      
+      // Only redirect if we're not on login/register pages AND it's not a password change request
+      if (!isLoginPage && !isRegisterPage && !isPasswordChangeRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -61,7 +70,9 @@ export const adminService = {
   approveUser: (userId: number) => api.post(`/admin/approve-user/${userId}`),
   deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
   toggleAdmin: (userId: number, isAdminStatus: boolean) => 
-    api.post('/admin/toggle-admin', { userId, isAdminStatus })
+    api.post('/admin/toggle-admin', { userId, isAdminStatus }),
+  changeUserPassword: (userId: number, newPassword: string) =>
+    api.post('/admin/change-password', { userId, newPassword })
 };
 
 // Dashboard service
@@ -88,5 +99,7 @@ export const leaderboardService = {
 
 // Profile service
 export const profileService = {
-  getProfile: () => api.get('/profile')
+  getProfile: () => api.get('/profile'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/profile/change-password', { currentPassword, newPassword })
 };

@@ -76,7 +76,11 @@ export default function LoginPage() {
             </Typography>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert 
+                severity="error" 
+                sx={{ mb: 2 }}
+                onClose={() => setError('')}
+              >
                 {error}
               </Alert>
             )}

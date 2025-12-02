@@ -37,6 +37,10 @@ async function handler(req: AuthenticatedRequest) {
         }
       }
       
+      // Check if user is super admin (without exposing the ID)
+      const superAdminId = process.env.SUPER_ADMIN_ID;
+      const is_super_admin = superAdminId && user.id.toString() === superAdminId;
+
       return {
         id: user.id,
         username: user.username,
@@ -45,7 +49,8 @@ async function handler(req: AuthenticatedRequest) {
         is_linked: user.is_linked,
         shooter_id: user.shooter_id,
         shooter_name: shooter_name,
-        created_at: user.created_at
+        created_at: user.created_at,
+        is_super_admin: !!is_super_admin
       };
     }));
     
