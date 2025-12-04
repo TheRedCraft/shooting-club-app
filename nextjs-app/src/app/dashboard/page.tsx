@@ -55,8 +55,45 @@ export default function DashboardPage() {
   const [selectedMetric, setSelectedMetric] = useState<'avgScore' | 'bestScore' | 'bestTeiler' | 'avgSpread' | 'avgOffset'>('avgScore');
   const [selectedMetricTitle, setSelectedMetricTitle] = useState('');
 
-  const handleOpenModal = (sessionId: string) => {
-    setSelectedSessionId(sessionId);
+  const handleOpenModal = (sessionId: string | number) => {
+    // Ensure sessionId is a valid string (convert number to string if needed)
+    if (sessionId == null) {
+      console.error(`Session ID is null or undefined`);
+      return;
+    }
+    
+    // Convert to string first
+    const rawString = String(sessionId).trim();
+    let idString: string;
+    
+    // IMPORTANT: MySQL stores ScheibenID as SIGNED INT, so negative IDs are valid
+    // We need to accept both positive and negative integers
+    // The database uses the original signed integer value
+    if (rawString.startsWith('-')) {
+      // Negative number - validate it's a valid integer
+      const signedInt = parseInt(rawString, 10);
+      if (!isNaN(signedInt)) {
+        idString = rawString; // Keep the negative ID as-is for database queries
+      } else {
+        console.error(`Invalid negative session ID: ${rawString}`);
+        return;
+      }
+    } else {
+      // Positive number - validate it's numeric
+      if (!/^\d+$/.test(rawString)) {
+        console.error(`Invalid session ID format: ${rawString}`);
+        return;
+      }
+      idString = rawString;
+    }
+    
+    // Validate it's a valid integer (positive or negative)
+    if (!idString || !/^-?\d+$/.test(idString)) {
+      console.error(`Invalid session ID passed to handleOpenModal: ${sessionId} (type: ${typeof sessionId})`);
+      return;
+    }
+    
+    setSelectedSessionId(idString);
     setModalOpen(true);
   };
 

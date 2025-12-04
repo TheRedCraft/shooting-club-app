@@ -53,25 +53,47 @@ export default function LoginPage() {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" sx={{ px: { xs: 2, sm: 3 } }}>
       <Box
         sx={{
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          py: { xs: 2, sm: 0 }
         }}
       >
-        <Card sx={{ width: '100%' }}>
-          <CardContent sx={{ p: 4 }}>
+        <Card sx={{ width: '100%', maxWidth: '100%' }}>
+          <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
               <LanguageSwitcher />
             </Box>
             
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <ClubLogo variant="h4" />
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                mb: 2,
+                px: { xs: 1, sm: 0 },
+                overflow: 'hidden'
+              }}
+            >
+              <Box sx={{ 
+                maxWidth: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                textAlign: 'center'
+              }}>
+                <ClubLogo variant="h5" />
+              </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              align="center" 
+              sx={{ mb: 3, px: { xs: 1, sm: 0 } }}
+            >
               {t.login.title}
             </Typography>
 

@@ -38,9 +38,9 @@ api.interceptors.response.use(
       
       // Only redirect if we're not on login/register pages AND it's not a password change request
       if (!isLoginPage && !isRegisterPage && !isPasswordChangeRequest) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
       }
     }
     return Promise.reject(error);

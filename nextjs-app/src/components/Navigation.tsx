@@ -166,7 +166,7 @@ export default function Navigation() {
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
       <Box sx={{ my: 2, display: 'flex', justifyContent: 'center' }}>
-        <ClubLogo variant="h6" />
+        <ClubLogo variant="body1" />
       </Box>
       <Divider />
       <List>
@@ -187,26 +187,37 @@ export default function Navigation() {
 
   return (
     <>
-      <AppBar position="sticky">
-        <Toolbar>
+      <AppBar position="sticky" sx={{ overflow: 'hidden' }}>
+        <Toolbar sx={{ 
+          minHeight: { xs: 56, sm: 64 },
+          px: { xs: 1, sm: 2 },
+          overflow: 'hidden',
+          maxWidth: '100%'
+        }}>
           {isMobile && (
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
+              sx={{ mr: { xs: 1, sm: 2 }, flexShrink: 0 }}
             >
               <MenuIcon />
             </IconButton>
           )}
           
-          <Box sx={{ flexGrow: 0, mr: 4 }}>
-            <ClubLogo variant="h6" />
+          <Box sx={{ 
+            flexGrow: 0, 
+            mr: { xs: 1, sm: 4 },
+            flexShrink: 1,
+            minWidth: 0,
+            overflow: 'hidden'
+          }}>
+            <ClubLogo variant={isMobile ? "body1" : "h6"} />
           </Box>
 
           {!isMobile && (
-            <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', gap: 1, overflow: 'hidden' }}>
               {navigationItems.map((item) => (
                 <Button
                   key={item.path}
@@ -215,7 +226,8 @@ export default function Navigation() {
                   onClick={() => router.push(item.path)}
                   sx={{
                     borderBottom: pathname === item.path ? 2 : 0,
-                    borderRadius: 0
+                    borderRadius: 0,
+                    flexShrink: 0
                   }}
                 >
                   {item.label}
@@ -224,11 +236,26 @@ export default function Navigation() {
             </Box>
           )}
 
-          <Box sx={{ flexGrow: 1 }} />
+          {!isMobile && <Box sx={{ flexGrow: 1 }} />}
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: { xs: 0.5, sm: 2 },
+            flexShrink: 0,
+            ml: 'auto'
+          }}>
             {!isMobile && user && (
-              <Typography variant="body2">
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  display: { xs: 'none', md: 'block' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: { md: 150, lg: 200 }
+                }}
+              >
                 {user.username}
                 {user.is_admin && ' (Admin)'}
               </Typography>
@@ -241,6 +268,7 @@ export default function Navigation() {
               aria-haspopup="true"
               onClick={handleProfileMenuOpen}
               color="inherit"
+              sx={{ flexShrink: 0 }}
             >
               <AccountIcon />
             </IconButton>

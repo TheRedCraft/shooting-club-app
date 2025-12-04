@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { adminService } from '@/lib/client/api';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
   id: number;
@@ -35,6 +36,7 @@ interface User {
   is_linked: boolean;
   shooter_id: string | null;
   shooter_name: string | null;
+  is_super_admin?: boolean;
 }
 
 interface MeytonShooter {
@@ -47,6 +49,7 @@ interface MeytonShooter {
 
 export default function LinkUsersTab() {
   const { t } = useLanguage();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [shooters, setShooters] = useState<MeytonShooter[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -294,13 +297,23 @@ export default function LinkUsersTab() {
                   <ListItem
                     key={user.id}
                     secondaryAction={
-                      <Button
-                        size="small"
-                        color="error"
-                        onClick={() => handleUnlinkUser(user)}
-                      >
-                        <UnlinkIcon />
-                      </Button>
+                      user.is_super_admin && currentUser?.id !== user.id ? (
+                        <Button
+                          size="small"
+                          disabled
+                          title="Der Super-Administrator kann nicht von anderen getrennt werden"
+                        >
+                          <UnlinkIcon />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => handleUnlinkUser(user)}
+                        >
+                          <UnlinkIcon />
+                        </Button>
+                      )
                     }
                   >
                     <ListItemText

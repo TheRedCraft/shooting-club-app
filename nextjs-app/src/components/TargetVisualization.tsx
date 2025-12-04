@@ -121,31 +121,32 @@ function drawTarget(ctx: CanvasRenderingContext2D, cx: number, cy: number, scale
   
   // Ring-Grenzen als Radius (vom Zentrum aus gemessen)
   const rings = isKK ? [
-    // Kleinkaliber 50m Scheibe (ISSF/DSB)
-    // Ring 10: 10.4mm Durchmesser, Innenzehn: 5.0mm, Ringabstand: 8.0mm, Spiegel: 112.4mm
-    { radius: (10.4 + 8.0 * 9) / 2, color: '#d0d0d0', label: '1' },  // Ring 1: 82.4mm Ø - Hellgrau
-    { radius: (10.4 + 8.0 * 8) / 2, color: '#c0c0c0', label: '2' },  // Ring 2: 74.4mm Ø - Grau
-    { radius: (10.4 + 8.0 * 7) / 2, color: '#b0b0b0', label: '3' },  // Ring 3: 66.4mm Ø - Grau
-    { radius: (10.4 + 8.0 * 6) / 2, color: '#a0a0a0', label: '4' },  // Ring 4: 58.4mm Ø - Dunkelgrau (Spiegel: 112.4mm beginnt zwischen Ring 4 und 5)
-    { radius: (10.4 + 8.0 * 5) / 2, color: '#4db8a8', label: '5' },  // Ring 5: 50.4mm Ø - Türkis
-    { radius: (10.4 + 8.0 * 4) / 2, color: '#40a89d', label: '6' },  // Ring 6: 42.4mm Ø - Türkis
-    { radius: (10.4 + 8.0 * 3) / 2, color: '#359892', label: '7' },  // Ring 7: 34.4mm Ø - Türkis
-    { radius: (10.4 + 8.0 * 2) / 2, color: '#2a8887', label: '8' },  // Ring 8: 26.4mm Ø - Dunkeltürkis
-    { radius: (10.4 + 8.0 * 1) / 2, color: '#20787c', label: '9' },  // Ring 9: 18.4mm Ø - Dunkeltürkis
-    { radius: 10.4 / 2, color: '#166871', label: '10' },              // Ring 10: 10.4mm Ø - Dunkeltürkis
-    { radius: 5.0 / 2, color: '#ffffff', label: '' },                 // Innenzehn: 5.0mm Ø - Weiß
+    // Kleinkaliber 50m Scheibe - 50m Gewehr Scheibe Nr. 3 (offizielle Spezifikation)
+    // Ring-Durchmesser gemäß offizieller Tabelle
+    { radius: 154.4 / 2, color: '#d0d0d0', label: '1' },  // Ring 1: 154.4mm Ø (77.2mm Radius) - Hellgrau
+    { radius: 138.4 / 2, color: '#c0c0c0', label: '2' },  // Ring 2: 138.4mm Ø (69.2mm Radius) - Grau
+    { radius: 122.4 / 2, color: '#b0b0b0', label: '3' },  // Ring 3: 122.4mm Ø (61.2mm Radius) - Grau
+    { radius: 106.4 / 2, color: '#a0a0a0', label: '4' },  // Ring 4: 106.4mm Ø (53.2mm Radius) - Dunkelgrau
+    { radius: 90.4 / 2, color: '#4db8a8', label: '5' },  // Ring 5: 90.4mm Ø (45.2mm Radius) - Türkis
+    { radius: 74.4 / 2, color: '#40a89d', label: '6' },  // Ring 6: 74.4mm Ø (37.2mm Radius) - Türkis
+    { radius: 58.4 / 2, color: '#359892', label: '7' },  // Ring 7: 58.4mm Ø (29.2mm Radius) - Türkis
+    { radius: 42.4 / 2, color: '#2a8887', label: '8' },  // Ring 8: 42.4mm Ø (21.2mm Radius) - Dunkeltürkis
+    { radius: 26.4 / 2, color: '#20787c', label: '9' },  // Ring 9: 26.4mm Ø (13.2mm Radius) - Dunkeltürkis
+    { radius: 10.4 / 2, color: '#166871', label: '10' },              // Ring 10: 10.4mm Ø (5.2mm Radius) - Dunkeltürkis
+    { radius: 5.0 / 2, color: '#ffffff', label: '' },                 // Innenzehn: 5.0mm Ø (2.5mm Radius) - Weiß
   ] : [
-    // Luftgewehr 10m Scheibe (ISSF)
-    { radius: 53.5 / 2, color: '#d0d0d0', label: '1' },  // Ring 1 - Hellgrau
-    { radius: 47.5 / 2, color: '#c0c0c0', label: '2' },  // Ring 2 - Grau
-    { radius: 41.5 / 2, color: '#b0b0b0', label: '3' },  // Ring 3 - Grau
-    { radius: 35.5 / 2, color: '#a0a0a0', label: '4' },  // Ring 4 - Dunkelgrau
-    { radius: 29.5 / 2, color: '#4db8a8', label: '5' },  // Ring 5 - Türkis (Trefferfläche)
-    { radius: 23.5 / 2, color: '#40a89d', label: '6' },  // Ring 6 - Türkis
-    { radius: 17.5 / 2, color: '#359892', label: '7' },  // Ring 7 - Türkis
-    { radius: 11.5 / 2, color: '#2a8887', label: '8' },  // Ring 8 - Dunkeltürkis
-    { radius: 5.5 / 2, color: '#20787c', label: '9' },   // Ring 9 - Dunkeltürkis
-    { radius: 0.5 / 2, color: '#166871', label: '10' },  // Ring 10 (Innenzehn) - Dunkeltürkis
+    // Luftgewehr 10m Scheibe - 10m Gewehr/Armbrust Scheibe Nr. 1 (offizielle Spezifikation)
+    // Ring-Durchmesser gemäß offizieller Tabelle
+    { radius: 45.5 / 2, color: '#d0d0d0', label: '1' },  // Ring 1: 45.5mm Ø (22.75mm Radius) - Hellgrau
+    { radius: 40.5 / 2, color: '#c0c0c0', label: '2' },  // Ring 2: 40.5mm Ø (20.25mm Radius) - Grau
+    { radius: 35.5 / 2, color: '#b0b0b0', label: '3' },  // Ring 3: 35.5mm Ø (17.75mm Radius) - Grau
+    { radius: 30.5 / 2, color: '#a0a0a0', label: '4' },  // Ring 4: 30.5mm Ø (15.25mm Radius) - Dunkelgrau
+    { radius: 25.5 / 2, color: '#4db8a8', label: '5' },  // Ring 5: 25.5mm Ø (12.75mm Radius) - Türkis (Trefferfläche)
+    { radius: 20.5 / 2, color: '#40a89d', label: '6' },  // Ring 6: 20.5mm Ø (10.25mm Radius) - Türkis
+    { radius: 15.5 / 2, color: '#359892', label: '7' },  // Ring 7: 15.5mm Ø (7.75mm Radius) - Türkis
+    { radius: 10.5 / 2, color: '#2a8887', label: '8' },  // Ring 8: 10.5mm Ø (5.25mm Radius) - Dunkeltürkis
+    { radius: 5.5 / 2, color: '#20787c', label: '9' },   // Ring 9: 5.5mm Ø (2.75mm Radius) - Dunkeltürkis
+    { radius: 0.5 / 2, color: '#166871', label: '10' },  // Ring 10: 0.5mm Ø (0.25mm Radius) - Dunkeltürkis (Innenzehn)
   ];
 
   // Draw rings from outside to inside

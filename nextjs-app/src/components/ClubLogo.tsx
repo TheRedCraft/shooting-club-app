@@ -26,23 +26,41 @@ export default function ClubLogo({ variant = 'h6', showIcon = true, size, showNa
   );
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+    <Box sx={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 1.5,
+      flexWrap: 'nowrap',
+      justifyContent: 'center',
+      maxWidth: '100%',
+      overflow: 'hidden'
+    }}>
       {hasLogo ? (
         <Image
           src={clubConfig.logo!}
           alt={clubConfig.name}
           width={logoSize}
           height={logoSize}
-          style={{ objectFit: 'contain' }}
+          style={{ objectFit: 'contain', flexShrink: 0 }}
           unoptimized={clubConfig.logo!.startsWith('http')} // Allow external images
         />
       ) : showIcon ? (
-        <Typography component="span" sx={{ fontSize: logoSize }}>
+        <Typography component="span" sx={{ fontSize: logoSize, flexShrink: 0 }}>
           🎯
         </Typography>
       ) : null}
       {showName && (
-        <Typography variant={variant} component="span">
+        <Typography 
+          variant={variant} 
+          component="span"
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flexShrink: 1,
+            minWidth: 0
+          }}
+        >
           {clubConfig.name}
         </Typography>
       )}

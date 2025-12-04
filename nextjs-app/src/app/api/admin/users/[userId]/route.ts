@@ -17,6 +17,26 @@ async function handler(
       );
     }
     
+    // SECURITY: Prevent users from deleting themselves
+    if (req.user!.id === userId) {
+      console.warn(`⚠️  User ${userId} attempted to delete themselves`);
+      return NextResponse.json({
+        success: false,
+        message: 'You cannot delete yourself'
+      }, { status: 403 });
+    }
+    
+    // SECURITY: Check if this is the super admin (protected from deletion by others)
+    const superAdminId = process.env.SUPER_ADMIN_ID;
+    if (superAdminId && userId.toString() === superAdminId) {
+      // Only allow the super admin to delete themselves (but they can't due to check above)
+      console.warn(`⚠️  Admin ${req.user!.id} attempted to delete Super-Admin ${userId}`);
+      return NextResponse.json({
+        success: false,
+        message: 'The Super-Administrator cannot be deleted by others'
+      }, { status: 403 });
+    }
+    
     // Check if user exists
     const userResult = await query(
       'SELECT id FROM users WHERE id = $1',

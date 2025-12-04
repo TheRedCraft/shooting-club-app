@@ -17,7 +17,8 @@ import {
   Chip,
   Switch,
   FormControlLabel,
-  Divider
+  Divider,
+  Slider
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
@@ -43,7 +44,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
   const [showSpread, setShowSpread] = useState(true);
   const [showCenter, setShowCenter] = useState(true);
   const [localRingMode, setLocalRingMode] = useState<'decimal' | 'normal'>('decimal');
-  const zoomScale = 10; // Fixed maximum zoom
+  const [zoomScale, setZoomScale] = useState<number>(5); // Zoom scale (pixels per mm), default 5
 
   useEffect(() => {
     if (open && sessionId) {
@@ -58,8 +59,18 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
       setLoading(true);
       setError(null);
       
+      // Ensure sessionId is a valid string (convert number to string if needed)
+      // MySQL ScheibenID is stored as SIGNED INT, so negative IDs are valid
+      const idString = String(sessionId).trim();
+      if (!/^-?\d+$/.test(idString)) {
+        console.error(`Invalid session ID format in SessionDetailsModal: ${sessionId} (type: ${typeof sessionId})`);
+        setError('Invalid session ID format');
+        setLoading(false);
+        return;
+      }
+      
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/sessions/${sessionId}/shots`, {
+      const response = await axios.get(`/api/sessions/${idString}/shots`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -75,6 +86,7 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
   const handleClose = () => {
     setData(null);
     setError(null);
+    setZoomScale(5); // Reset zoom to default
     onClose();
   };
 
@@ -198,9 +210,47 @@ export default function SessionDetailsModal({ open, onClose, sessionId }: Sessio
             <Grid size={{ xs: 12, lg: 8 }}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {t.sessions.targetImage}
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+                    <Typography variant="h6">
+                      {t.sessions.targetImage}
+                    </Typography>
+                    <Box sx={{ 
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: '100%', sm: 200 },
+                      maxWidth: { xs: '100%', sm: 300 },
+                      px: { xs: 1, sm: 2 }
+                    }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                        Zoom: {zoomScale.toFixed(1)}x
+                      </Typography>
+                      <Slider
+                        value={zoomScale}
+                        onChange={(_, value) => setZoomScale(value as number)}
+                        min={2}
+                        max={25}
+                        step={0.5}
+                        marks={[
+                          { value: 2, label: '2x' },
+                          { value: 5, label: '5x' },
+                          { value: 10, label: '10x' },
+                          { value: 15, label: '15x' },
+                          { value: 20, label: '20x' },
+                          { value: 25, label: '25x' }
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value.toFixed(1)}x`}
+                        sx={{
+                          '& .MuiSlider-thumb': {
+                            width: { xs: 20, sm: 18 },
+                            height: { xs: 20, sm: 18 }
+                          },
+                          '& .MuiSlider-markLabel': {
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Box>
                   {data.shots && data.analysis && (
                     <TargetVisualization
                       shots={data.shots}

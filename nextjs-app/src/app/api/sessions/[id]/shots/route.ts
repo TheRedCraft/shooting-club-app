@@ -11,18 +11,30 @@ async function handler(
 ) {
   try {
     const params = await context.params;
-    const sessionId = params.id;
+    let sessionId = params.id;
     const userId = req.user!.id;
 
-    // SECURITY: Validate session ID format (should be numeric)
-    if (!sessionId || !/^\d+$/.test(sessionId)) {
+    // SECURITY: Validate and clean session ID format (should be numeric)
+    if (sessionId === null || sessionId === undefined || sessionId === '') {
+      console.error(`Session ID is null/undefined/empty: "${sessionId}" (type: ${typeof sessionId})`);
       return NextResponse.json({
         success: false,
         message: 'Invalid session ID format'
       }, { status: 400 });
     }
 
-    console.log(`📊 API: Fetching shots for session ${sessionId} (user: ${userId})`);
+    // Trim whitespace and convert to string
+    sessionId = String(sessionId).trim();
+
+    // Validate it's a valid integer (can be positive or negative, as MySQL uses signed INT)
+    // MySQL ScheibenID is stored as SIGNED INT, so negative IDs are valid
+    if (!/^-?\d+$/.test(sessionId)) {
+      console.error(`Invalid session ID format received: "${params.id}"`);
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid session ID format'
+      }, { status: 400 });
+    }
 
     // SECURITY: Get user info to verify session ownership
     const userResult = await query(
@@ -142,8 +154,6 @@ async function handler(
       total_score_decimal: (session.total_score_decimal / 10).toFixed(1), // Decimal ring
       best_teiler: bestTeilerFromDb ? bestTeilerFromDb.toFixed(1) : null
     };
-
-    console.log(`✅ API: Returning ${shots.length} shots with analysis`);
 
     // Close the pool
     await pool.end();

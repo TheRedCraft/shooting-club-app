@@ -7,11 +7,25 @@ import mysql from 'mysql2/promise';
 async function handler(req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const sessionId = resolvedParams.id;
+    let sessionId = resolvedParams.id;
     const userId = req.user!.id;
 
-    // SECURITY: Validate session ID format (should be numeric)
-    if (!sessionId || !/^\d+$/.test(sessionId)) {
+    // SECURITY: Validate and clean session ID format (should be numeric)
+    if (sessionId === null || sessionId === undefined || sessionId === '') {
+      console.error(`Session ID is null/undefined/empty: "${sessionId}" (type: ${typeof sessionId})`);
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid session ID format'
+      }, { status: 400 });
+    }
+
+    // Trim whitespace and convert to string
+    sessionId = String(sessionId).trim();
+
+    // Validate it's a valid integer (can be positive or negative, as MySQL uses signed INT)
+    // MySQL ScheibenID is stored as SIGNED INT, so negative IDs are valid
+    if (!/^-?\d+$/.test(sessionId)) {
+      console.error(`Invalid session ID format received: "${resolvedParams.id}"`);
       return NextResponse.json({
         success: false,
         message: 'Invalid session ID format'

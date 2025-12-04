@@ -17,6 +17,19 @@ async function handler(
       );
     }
     
+    // SECURITY: Check if this is the super admin (protected from unlinking by others)
+    const superAdminId = process.env.SUPER_ADMIN_ID;
+    if (superAdminId && userId.toString() === superAdminId) {
+      // Only allow the super admin to unlink themselves
+      if (req.user!.id.toString() !== superAdminId) {
+        console.warn(`⚠️  Admin ${req.user!.id} attempted to unlink Super-Admin ${userId}`);
+        return NextResponse.json({
+          success: false,
+          message: 'The Super-Administrator cannot be unlinked by others'
+        }, { status: 403 });
+      }
+    }
+    
     // Check if user exists
     const userResult = await query(
       'SELECT id FROM users WHERE id = $1',

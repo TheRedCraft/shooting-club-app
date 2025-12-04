@@ -36,6 +36,7 @@ import {
 import { adminService } from '@/lib/client/api';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { validatePassword } from '@/lib/utils/passwordValidation';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
   id: number;
@@ -51,6 +52,7 @@ interface User {
 
 export default function UserManagementTab() {
   const { t } = useLanguage();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -309,15 +311,35 @@ export default function UserManagementTab() {
                   </TableCell>
                   <TableCell align="right">
                     {user.is_admin ? (
-                      <Tooltip title={t.admin.userManagement.removeAdmin}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleAdmin(user, false)}
-                          color="warning"
-                        >
-                          <RemoveAdminIcon />
-                        </IconButton>
-                      </Tooltip>
+                      user.is_super_admin ? (
+                        <Tooltip title="Der Super-Administrator kann nicht degradiert werden">
+                          <IconButton
+                            size="small"
+                            disabled
+                          >
+                            <RemoveAdminIcon />
+                          </IconButton>
+                        </Tooltip>
+                      ) : currentUser?.id === user.id ? (
+                        <Tooltip title="Sie können sich nicht selbst degradieren">
+                          <IconButton
+                            size="small"
+                            disabled
+                          >
+                            <RemoveAdminIcon />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title={t.admin.userManagement.removeAdmin}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleToggleAdmin(user, false)}
+                            color="warning"
+                          >
+                            <RemoveAdminIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )
                     ) : (
                       <Tooltip title={t.admin.userManagement.makeAdmin}>
                         <IconButton
@@ -329,7 +351,7 @@ export default function UserManagementTab() {
                         </IconButton>
                       </Tooltip>
                     )}
-                    {!user.is_super_admin && (
+                    {user.is_super_admin && currentUser?.id === user.id ? (
                       <Tooltip title="Passwort ändern">
                         <IconButton
                           size="small"
@@ -339,38 +361,79 @@ export default function UserManagementTab() {
                           <LockIcon />
                         </IconButton>
                       </Tooltip>
-                    )}
-                    {user.is_super_admin && (
+                    ) : !user.is_super_admin ? (
+                      <Tooltip title="Passwort ändern">
+                        <IconButton
+                          size="small"
+                          onClick={() => handlePasswordChangeClick(user)}
+                          color="primary"
+                        >
+                          <LockIcon />
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
                       <Tooltip title="Das Passwort des Super-Administrators kann nicht von anderen geändert werden">
                         <IconButton
                           size="small"
                           disabled
-                          color="default"
                         >
                           <LockIcon />
                         </IconButton>
                       </Tooltip>
                     )}
                     {user.is_linked && (
-                      <Tooltip title={t.admin.userManagement.unlink}>
+                      <>
+                    {user.is_super_admin && currentUser?.id !== user.id ? (
+                      <Tooltip title="Der Super-Administrator kann nicht von anderen getrennt werden">
                         <IconButton
                           size="small"
-                          onClick={() => handleUnlink(user)}
-                          color="info"
+                          disabled
                         >
                           <UnlinkIcon />
                         </IconButton>
                       </Tooltip>
+                    ) : (
+                          <Tooltip title={t.admin.userManagement.unlink}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleUnlink(user)}
+                              color="info"
+                            >
+                              <UnlinkIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </>
                     )}
-                    <Tooltip title={t.admin.userManagement.delete}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteClick(user)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
+                    {user.is_super_admin && currentUser?.id !== user.id ? (
+                      <Tooltip title="Der Super-Administrator kann nicht von anderen gelöscht werden">
+                        <IconButton
+                          size="small"
+                          disabled
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    ) : currentUser?.id === user.id ? (
+                      <Tooltip title="Sie können sich nicht selbst löschen">
+                        <IconButton
+                          size="small"
+                          disabled
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title={t.admin.userManagement.delete}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteClick(user)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

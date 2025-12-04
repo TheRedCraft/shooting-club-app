@@ -352,10 +352,11 @@ export const getShooterSessions = async (shooterId: string) => {
     }
     
     // Get all sessions for this shooter (by name) with retry logic
+    // IMPORTANT: Cast ScheibenID to CHAR to prevent integer overflow issues in JavaScript
     const [sessionRows] = await executeQuery(async (pool) => {
       return await pool.query(`
       SELECT 
-        ScheibenID AS session_id,
+        CAST(ScheibenID AS CHAR) AS session_id,
         Zeitstempel AS session_date,
         Disziplin AS discipline,
         TotalRing AS total_score,
