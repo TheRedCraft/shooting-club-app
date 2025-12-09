@@ -1,0 +1,11 @@
+{
+  "name": "VSG",
+  "short_name": "VSG",
+  "description": "VSG",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "orientation": "portrait"
+}
+

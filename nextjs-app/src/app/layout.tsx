@@ -6,6 +6,13 @@ import { clubConfig } from "@/lib/config/club";
 export const metadata: Metadata = {
   title: clubConfig.name,
   description: clubConfig.description,
+  manifest: "/manifest.json",
+  themeColor: "#1976d2",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: clubConfig.name,
+  },
 };
 
 export default function RootLayout({

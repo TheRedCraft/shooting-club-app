@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -12,18 +12,68 @@ import {
 } from '@mui/material';
 import { HourglassEmpty } from '@mui/icons-material';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { profileService } from '@/lib/client/api';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function PendingLinkPage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { updateUser } = useAuth();
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
+      return;
     }
-  }, [router]);
+
+    // Check user status periodically
+    const checkUserStatus = async () => {
+      try {
+        const response = await profileService.getProfile();
+        const userData = response.data.user;
+        
+        // If user is now linked, update context and redirect
+        if (userData.is_linked || userData.is_admin) {
+          updateUser({
+            id: userData.id,
+            username: userData.username,
+            email: userData.email,
+            is_admin: userData.is_admin,
+            is_linked: userData.is_linked,
+            shooter_id: userData.shooter_id
+          });
+          
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          
+          // Redirect to dashboard
+          router.push('/dashboard');
+        }
+      } catch (error) {
+        // Silently fail - user might not be authenticated anymore
+        console.error('Error checking user status:', error);
+      }
+    };
+
+    // Check immediately
+    checkUserStatus();
+
+    // Then check every 3 seconds
+    pollingIntervalRef.current = setInterval(checkUserStatus, 3000);
+
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [router, updateUser]);
 
   return (
     <Container maxWidth="md">
